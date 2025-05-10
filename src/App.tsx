@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import BuyCar from "./pages/BuyCar";
 import FindDealer from "./pages/FindDealer";
 import SellCar from "./pages/SellCar";
+import VehicleDetail from "./pages/VehicleDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,6 +24,7 @@ const App = () => (
           <Route path="/buy-car" element={<BuyCar />} />
           <Route path="/find-dealer" element={<FindDealer />} />
           <Route path="/sell-car" element={<SellCar />} />
+          <Route path="/vehicle/:id" element={<VehicleDetail />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
