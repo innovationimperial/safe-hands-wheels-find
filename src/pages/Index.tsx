@@ -5,6 +5,7 @@ import FeaturedDealers from "@/components/home/FeaturedDealers";
 import FeaturedVehicles from "@/components/home/FeaturedVehicles";
 import WhyChooseUs from "@/components/home/WhyChooseUs";
 import CtaBanner from "@/components/home/CtaBanner";
+import FilterOptions from "@/components/home/FilterOptions";
 
 const Index = () => {
   return (
@@ -12,6 +13,7 @@ const Index = () => {
       <HeroSearch />
       <FeaturedDealers />
       <FeaturedVehicles />
+      <FilterOptions />
       <WhyChooseUs />
       <CtaBanner />
     </Layout>
