@@ -4,10 +4,8 @@ import { Link } from "react-router-dom";
 import { 
   Car, 
   Truck, 
-  Suv, 
-  Sedan, 
-  Bus, 
-  Minibus
+  Bike,
+  Bus
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -26,12 +24,12 @@ const carBrands = [
 ];
 
 const bodyTypes = [
-  { name: "SUV", icon: Suv, count: 780 },
+  { name: "SUV", icon: Car, count: 780 },
   { name: "Pickup Truck", icon: Truck, count: 564 },
   { name: "Hatchback", icon: Car, count: 421 },
-  { name: "Sedan", icon: Sedan, count: 428 },
+  { name: "Sedan", icon: Car, count: 428 },
   { name: "Trucks/Buses", icon: Bus, count: 105 },
-  { name: "Minibus/Van", icon: Minibus, count: 166 }
+  { name: "Minibus/Van", icon: Bus, count: 166 }
 ];
 
 const FilterOptions = () => {
