@@ -9,6 +9,57 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      dealers: {
+        Row: {
+          address: string
+          city: string
+          created_at: string
+          description: string | null
+          email: string
+          id: string
+          logo: string | null
+          name: string
+          phone: string
+          state: string
+          updated_at: string
+          user_id: string
+          website: string | null
+          zip: string
+        }
+        Insert: {
+          address: string
+          city: string
+          created_at?: string
+          description?: string | null
+          email: string
+          id?: string
+          logo?: string | null
+          name: string
+          phone: string
+          state: string
+          updated_at?: string
+          user_id: string
+          website?: string | null
+          zip: string
+        }
+        Update: {
+          address?: string
+          city?: string
+          created_at?: string
+          description?: string | null
+          email?: string
+          id?: string
+          logo?: string | null
+          name?: string
+          phone?: string
+          state?: string
+          updated_at?: string
+          user_id?: string
+          website?: string | null
+          zip?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -36,15 +87,148 @@ export type Database = {
         }
         Relationships: []
       }
+      vehicle_features: {
+        Row: {
+          category: string
+          created_at: string
+          feature: string
+          id: string
+          value: boolean
+          vehicle_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          feature: string
+          id?: string
+          value?: boolean
+          vehicle_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          feature?: string
+          id?: string
+          value?: boolean
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_features_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vehicle_images: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string
+          vehicle_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url: string
+          vehicle_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_images_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vehicles: {
+        Row: {
+          body_type: Database["public"]["Enums"]["body_type"]
+          color: string
+          created_at: string
+          doors: number
+          engine_capacity: string
+          featured: boolean
+          fuel_type: Database["public"]["Enums"]["fuel_type"]
+          id: string
+          image: string
+          location: string
+          mileage: string
+          price: number
+          status: Database["public"]["Enums"]["vehicle_status"]
+          title: string
+          transmission: Database["public"]["Enums"]["transmission_type"]
+          updated_at: string
+          user_id: string
+          year: number
+        }
+        Insert: {
+          body_type: Database["public"]["Enums"]["body_type"]
+          color: string
+          created_at?: string
+          doors: number
+          engine_capacity: string
+          featured?: boolean
+          fuel_type: Database["public"]["Enums"]["fuel_type"]
+          id?: string
+          image: string
+          location: string
+          mileage: string
+          price: number
+          status?: Database["public"]["Enums"]["vehicle_status"]
+          title: string
+          transmission: Database["public"]["Enums"]["transmission_type"]
+          updated_at?: string
+          user_id: string
+          year: number
+        }
+        Update: {
+          body_type?: Database["public"]["Enums"]["body_type"]
+          color?: string
+          created_at?: string
+          doors?: number
+          engine_capacity?: string
+          featured?: boolean
+          fuel_type?: Database["public"]["Enums"]["fuel_type"]
+          id?: string
+          image?: string
+          location?: string
+          mileage?: string
+          price?: number
+          status?: Database["public"]["Enums"]["vehicle_status"]
+          title?: string
+          transmission?: Database["public"]["Enums"]["transmission_type"]
+          updated_at?: string
+          user_id?: string
+          year?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      body_type: "SUV" | "Sedan" | "Hatchback" | "Coupe" | "Truck" | "Van"
+      fuel_type: "Gasoline" | "Diesel" | "Hybrid" | "Electric"
+      transmission_type: "Automatic" | "Manual" | "PDK" | "CVT"
+      vehicle_status: "Available" | "Sold" | "Reserved"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -159,6 +343,11 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      body_type: ["SUV", "Sedan", "Hatchback", "Coupe", "Truck", "Van"],
+      fuel_type: ["Gasoline", "Diesel", "Hybrid", "Electric"],
+      transmission_type: ["Automatic", "Manual", "PDK", "CVT"],
+      vehicle_status: ["Available", "Sold", "Reserved"],
+    },
   },
 } as const
