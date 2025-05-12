@@ -16,6 +16,26 @@ import AdminVehicles from "./pages/AdminVehicles";
 import AdminVehicleForm from "./pages/AdminVehicleForm";
 import AdminUsers from "./pages/AdminUsers";
 import { useState } from "react";
+import { AuthProvider } from "./contexts/AuthContext";
+
+const AppRoutes = () => {
+  return (
+    <Routes>
+      <Route path="/" element={<Index />} />
+      <Route path="/buy-car" element={<BuyCar />} />
+      <Route path="/find-dealer" element={<FindDealer />} />
+      <Route path="/sell-car" element={<SellCar />} />
+      <Route path="/vehicle/:id" element={<VehicleDetail />} />
+      {/* Admin Routes */}
+      <Route path="/admin" element={<AdminDashboard />} />
+      <Route path="/admin/vehicles" element={<AdminVehicles />} />
+      <Route path="/admin/vehicles/add" element={<AdminVehicleForm />} />
+      <Route path="/admin/vehicles/edit/:id" element={<AdminVehicleForm />} />
+      <Route path="/admin/users" element={<AdminUsers />} />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+};
 
 const App = () => {
   // Create QueryClient inside the component
@@ -27,20 +47,9 @@ const App = () => {
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/buy-car" element={<BuyCar />} />
-            <Route path="/find-dealer" element={<FindDealer />} />
-            <Route path="/sell-car" element={<SellCar />} />
-            <Route path="/vehicle/:id" element={<VehicleDetail />} />
-            {/* Admin Routes */}
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/admin/vehicles" element={<AdminVehicles />} />
-            <Route path="/admin/vehicles/add" element={<AdminVehicleForm />} />
-            <Route path="/admin/vehicles/edit/:id" element={<AdminVehicleForm />} />
-            <Route path="/admin/users" element={<AdminUsers />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <AuthProvider>
+            <AppRoutes />
+          </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>

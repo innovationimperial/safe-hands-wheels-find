@@ -2,10 +2,21 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Menu, X, User } from 'lucide-react';
+import { Menu, X, User, LogOut } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import LoginModal from '@/components/auth/LoginModal';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
+  const { user, logout, isAdmin } = useAuth();
   
   const toggleMenu = () => {
     setIsOpen(!isOpen);
@@ -31,10 +42,41 @@ const Navbar = () => {
           <Link to="/sell-car" className="font-medium hover:text-primary transition-colors">
             Sell Your Car
           </Link>
-          <Button variant="outline" size="sm" className="flex items-center gap-2">
-            <User size={16} />
-            <span>Login / Register</span>
-          </Button>
+          
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="flex items-center gap-2">
+                  <User size={16} />
+                  <span>{user.name}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {isAdmin && (
+                  <>
+                    <DropdownMenuItem asChild>
+                      <Link to="/admin">Admin Dashboard</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
+                <DropdownMenuItem onClick={logout} className="text-red-600">
+                  <LogOut size={16} className="mr-2" />
+                  <span>Logout</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="flex items-center gap-2"
+              onClick={() => setLoginModalOpen(true)}
+            >
+              <User size={16} />
+              <span>Login / Register</span>
+            </Button>
+          )}
         </div>
         
         {/* Mobile menu button */}
@@ -75,13 +117,51 @@ const Navbar = () => {
             >
               Sell Your Car
             </Link>
-            <Button className="flex items-center justify-center gap-2 w-full">
-              <User size={16} />
-              <span>Login / Register</span>
-            </Button>
+            
+            {user ? (
+              <>
+                <div className="p-2 border-t pt-4">
+                  <div className="text-sm text-muted-foreground mb-2">Logged in as {user.name}</div>
+                  {isAdmin && (
+                    <Link 
+                      to="/admin" 
+                      className="block font-medium p-2 mb-2 hover:bg-accent rounded-md transition-colors"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      Admin Dashboard
+                    </Link>
+                  )}
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      logout();
+                      setIsOpen(false);
+                    }}
+                    className="w-full flex items-center justify-center gap-2"
+                  >
+                    <LogOut size={16} />
+                    <span>Logout</span>
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <Button 
+                className="flex items-center justify-center gap-2 w-full"
+                onClick={() => {
+                  setLoginModalOpen(true);
+                  setIsOpen(false);
+                }}
+              >
+                <User size={16} />
+                <span>Login / Register</span>
+              </Button>
+            )}
           </div>
         </div>
       )}
+      
+      {/* Login Modal */}
+      <LoginModal open={loginModalOpen} onOpenChange={setLoginModalOpen} />
     </nav>
   );
 };
