@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import AdminLayout from "@/components/layout/AdminLayout";
@@ -23,18 +24,26 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
+// Define enum types to match Supabase database types
+const bodyTypes = ["SUV", "Sedan", "Hatchback", "Coupe", "Truck", "Van"] as const;
+const fuelTypes = ["Gasoline", "Diesel", "Hybrid", "Electric"] as const;
+const transmissionTypes = ["Automatic", "Manual", "PDK", "CVT"] as const;
+
+type BodyType = typeof bodyTypes[number];
+type FuelType = typeof fuelTypes[number];
+type TransmissionType = typeof transmissionTypes[number];
+
 const formSchema = z.object({
   title: z.string().min(2, { message: "Title must be at least 2 characters." }),
   price: z.coerce.number().positive({ message: "Price must be a positive number." }),
   year: z.coerce.number().min(1900, { message: "Year must be after 1900." }).max(new Date().getFullYear() + 1),
   mileage: z.string().min(1, { message: "Mileage is required." }),
-  fuelType: z.string().min(1, { message: "Fuel type is required." }),
-  transmission: z.string().min(1, { message: "Transmission is required." }),
+  fuelType: z.enum(fuelTypes, { message: "Select a valid fuel type." }),
+  transmission: z.enum(transmissionTypes, { message: "Select a valid transmission." }),
   location: z.string().min(1, { message: "Location is required." }),
   featured: z.boolean().default(false),
   image: z.string().min(1, { message: "Primary image URL is required." }),
-  // Additional fields for detailed specs
-  bodyType: z.string().min(1, { message: "Body type is required." }),
+  bodyType: z.enum(bodyTypes, { message: "Select a valid body type." }),
   doors: z.coerce.number().min(1, { message: "Number of doors is required." }),
   color: z.string().min(1, { message: "Color is required." }),
   engineCapacity: z.string().min(1, { message: "Engine capacity is required." }),
@@ -124,13 +133,13 @@ const AdminVehicleForm = () => {
         price: vehicleData.price,
         year: vehicleData.year,
         mileage: vehicleData.mileage,
-        fuelType: vehicleData.fuel_type,
-        transmission: vehicleData.transmission,
+        fuelType: vehicleData.fuel_type as FuelType,
+        transmission: vehicleData.transmission as TransmissionType,
         location: vehicleData.location,
         featured: vehicleData.featured,
         image: vehicleData.image,
         additionalImages: vehicleData.additionalImages || [],
-        bodyType: vehicleData.body_type,
+        bodyType: vehicleData.body_type as BodyType,
         doors: vehicleData.doors,
         color: vehicleData.color,
         engineCapacity: vehicleData.engine_capacity,
@@ -183,13 +192,13 @@ const AdminVehicleForm = () => {
         price: vehicleData.price,
         year: vehicleData.year,
         mileage: vehicleData.mileage,
-        fuelType: vehicleData.fuel_type,
-        transmission: vehicleData.transmission,
+        fuelType: vehicleData.fuel_type as FuelType,
+        transmission: vehicleData.transmission as TransmissionType,
         location: vehicleData.location,
         featured: vehicleData.featured,
         image: vehicleData.image,
         additionalImages: vehicleData.additionalImages || [],
-        bodyType: vehicleData.body_type,
+        bodyType: vehicleData.body_type as BodyType,
         doors: vehicleData.doors,
         color: vehicleData.color,
         engineCapacity: vehicleData.engine_capacity,
@@ -217,18 +226,18 @@ const AdminVehicleForm = () => {
     mutationFn: async (formData: FormValues) => {
       if (!session?.user) throw new Error('Not authenticated');
       
-      // Prepare vehicle data
+      // Prepare vehicle data with properly typed enum values
       const vehicleData = {
         title: formData.title,
         price: formData.price,
         year: formData.year,
         mileage: formData.mileage,
-        fuel_type: formData.fuelType,
-        transmission: formData.transmission,
+        fuel_type: formData.fuelType as FuelType,
+        transmission: formData.transmission as TransmissionType,
         location: formData.location,
         featured: formData.featured,
         image: formData.image,
-        body_type: formData.bodyType,
+        body_type: formData.bodyType as BodyType,
         doors: formData.doors,
         color: formData.color,
         engine_capacity: formData.engineCapacity,
@@ -484,7 +493,7 @@ const AdminVehicleForm = () => {
                                 onValueChange={field.onChange} 
                                 value={field.value}
                               >
-                                {["Gasoline", "Diesel", "Hybrid", "Electric"].map(type => (
+                                {fuelTypes.map((type) => (
                                   <div key={type} className="flex items-center space-x-2">
                                     <RadioGroupItem value={type} id={`fuel-${type}`} />
                                     <label htmlFor={`fuel-${type}`}>{type}</label>
@@ -509,7 +518,7 @@ const AdminVehicleForm = () => {
                                 onValueChange={field.onChange} 
                                 value={field.value}
                               >
-                                {["Automatic", "Manual", "PDK", "CVT"].map(type => (
+                                {transmissionTypes.map((type) => (
                                   <div key={type} className="flex items-center space-x-2">
                                     <RadioGroupItem value={type} id={`trans-${type}`} />
                                     <label htmlFor={`trans-${type}`}>{type}</label>
@@ -610,7 +619,7 @@ const AdminVehicleForm = () => {
                                 onValueChange={field.onChange} 
                                 value={field.value}
                               >
-                                {["SUV", "Sedan", "Hatchback", "Coupe", "Truck", "Van"].map(type => (
+                                {bodyTypes.map((type) => (
                                   <div key={type} className="flex items-center space-x-2">
                                     <RadioGroupItem value={type} id={`body-${type}`} />
                                     <label htmlFor={`body-${type}`}>{type}</label>
