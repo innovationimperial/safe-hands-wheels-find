@@ -16,9 +16,10 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminVehicles from "./pages/AdminVehicles";
 import AdminVehicleForm from "./pages/AdminVehicleForm";
 import AdminUsers from "./pages/AdminUsers";
-import { useState } from "react";
 import { AuthProvider } from "./contexts/AuthContext";
+import { useState } from "react";
 
+// Separate the routes into their own component
 const AppRoutes = () => {
   return (
     <Routes>
@@ -39,8 +40,9 @@ const AppRoutes = () => {
   );
 };
 
-const App = () => {
-  // Create QueryClient inside the component
+// Fix the App component to ensure hooks are used correctly
+function App() {
+  // Create QueryClient inside the function component
   const [queryClient] = useState(() => new QueryClient());
 
   return (
@@ -56,6 +58,6 @@ const App = () => {
       </TooltipProvider>
     </QueryClientProvider>
   );
-};
+}
 
 export default App;
