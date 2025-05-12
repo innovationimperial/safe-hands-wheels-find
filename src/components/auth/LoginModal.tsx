@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,12 +23,18 @@ interface LoginModalProps {
 const LoginModal = ({ open, onOpenChange }: LoginModalProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    login(email, password);
-    onOpenChange(false);
+    setIsLoading(true);
+    try {
+      await login(email, password);
+      onOpenChange(false);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -65,17 +72,32 @@ const LoginModal = ({ open, onOpenChange }: LoginModalProps) => {
             />
           </div>
           <DialogFooter className="pt-4">
-            <Button type="submit" className="w-full">Login</Button>
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? "Logging in..." : "Login"}
+            </Button>
           </DialogFooter>
         </form>
         <div className="mt-4 text-center text-sm">
           <p className="text-muted-foreground">
-            For admin access, use:
+            For demo access, use:
           </p>
           <p className="text-xs font-mono mt-1">
             Email: admin@example.com<br />
             Password: admin123
           </p>
+          <div className="mt-3">
+            <p className="text-muted-foreground">
+              Don't have an account?
+            </p>
+            <Button 
+              variant="link" 
+              className="p-0 h-auto" 
+              onClick={() => onOpenChange(false)}
+              asChild
+            >
+              <Link to="/auth">Sign up here</Link>
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

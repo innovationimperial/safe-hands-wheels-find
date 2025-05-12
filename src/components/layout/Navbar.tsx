@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Menu, X, User, LogOut } from 'lucide-react';
+import { Menu, X, User, LogOut, UserPlus } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import LoginModal from '@/components/auth/LoginModal';
 import {
@@ -12,14 +12,19 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
-  const { user, logout, isAdmin } = useAuth();
+  const { user, profile, logout, isAdmin, isLoading } = useAuth();
   
   const toggleMenu = () => {
     setIsOpen(!isOpen);
+  };
+
+  const getInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase();
   };
 
   return (
@@ -43,12 +48,22 @@ const Navbar = () => {
             Sell Your Car
           </Link>
           
-          {user ? (
+          {!isLoading && (user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="flex items-center gap-2">
-                  <User size={16} />
-                  <span>{user.name}</span>
+                  <Avatar className="h-6 w-6">
+                    <AvatarImage src={profile?.avatar_url || ''} />
+                    <AvatarFallback>
+                      {profile?.full_name 
+                        ? getInitials(profile.full_name) 
+                        : user.email ? user.email[0].toUpperCase() : 'U'
+                      }
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="max-w-[100px] truncate">
+                    {profile?.username || user.email?.split('@')[0]}
+                  </span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -67,16 +82,28 @@ const Navbar = () => {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="flex items-center gap-2"
-              onClick={() => setLoginModalOpen(true)}
-            >
-              <User size={16} />
-              <span>Login / Register</span>
-            </Button>
-          )}
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="flex items-center gap-2"
+                onClick={() => setLoginModalOpen(true)}
+              >
+                <User size={16} />
+                <span>Login</span>
+              </Button>
+              <Button 
+                size="sm" 
+                className="flex items-center gap-2"
+                asChild
+              >
+                <Link to="/auth">
+                  <UserPlus size={16} />
+                  <span>Sign Up</span>
+                </Link>
+              </Button>
+            </div>
+          ))}
         </div>
         
         {/* Mobile menu button */}
@@ -118,10 +145,29 @@ const Navbar = () => {
               Sell Your Car
             </Link>
             
-            {user ? (
+            {!isLoading && (user ? (
               <>
                 <div className="p-2 border-t pt-4">
-                  <div className="text-sm text-muted-foreground mb-2">Logged in as {user.name}</div>
+                  <div className="flex items-center gap-3 mb-3">
+                    <Avatar>
+                      <AvatarImage src={profile?.avatar_url || ''} />
+                      <AvatarFallback>
+                        {profile?.full_name 
+                          ? getInitials(profile.full_name) 
+                          : user.email ? user.email[0].toUpperCase() : 'U'
+                        }
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <div className="font-medium">
+                        {profile?.full_name || user.email?.split('@')[0]}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {user.email}
+                      </div>
+                    </div>
+                  </div>
+                  
                   {isAdmin && (
                     <Link 
                       to="/admin" 
@@ -145,17 +191,30 @@ const Navbar = () => {
                 </div>
               </>
             ) : (
-              <Button 
-                className="flex items-center justify-center gap-2 w-full"
-                onClick={() => {
-                  setLoginModalOpen(true);
-                  setIsOpen(false);
-                }}
-              >
-                <User size={16} />
-                <span>Login / Register</span>
-              </Button>
-            )}
+              <div className="flex flex-col gap-2 pt-2">
+                <Button 
+                  className="flex items-center justify-center gap-2 w-full"
+                  onClick={() => {
+                    setLoginModalOpen(true);
+                    setIsOpen(false);
+                  }}
+                  variant="outline"
+                >
+                  <User size={16} />
+                  <span>Login</span>
+                </Button>
+                <Button
+                  className="flex items-center justify-center gap-2 w-full"
+                  onClick={() => setIsOpen(false)}
+                  asChild
+                >
+                  <Link to="/auth">
+                    <UserPlus size={16} />
+                    <span>Sign Up</span>
+                  </Link>
+                </Button>
+              </div>
+            ))}
           </div>
         </div>
       )}

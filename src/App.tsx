@@ -10,6 +10,7 @@ import FindDealer from "./pages/FindDealer";
 import SellCar from "./pages/SellCar";
 import VehicleDetail from "./pages/VehicleDetail";
 import NotFound from "./pages/NotFound";
+import Auth from "./pages/Auth";
 // Admin Pages
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminVehicles from "./pages/AdminVehicles";
@@ -26,6 +27,7 @@ const AppRoutes = () => {
       <Route path="/find-dealer" element={<FindDealer />} />
       <Route path="/sell-car" element={<SellCar />} />
       <Route path="/vehicle/:id" element={<VehicleDetail />} />
+      <Route path="/auth" element={<Auth />} />
       {/* Admin Routes */}
       <Route path="/admin" element={<AdminDashboard />} />
       <Route path="/admin/vehicles" element={<AdminVehicles />} />

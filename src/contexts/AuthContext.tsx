@@ -1,19 +1,25 @@
 
-import React, { createContext, useState, useContext, ReactNode } from "react";
+import React, { createContext, useState, useContext, ReactNode, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { Session, User } from "@supabase/supabase-js";
 
-type User = {
-  id: number;
-  name: string;
-  email: string;
-  role: string;
+type UserProfile = {
+  id: string;
+  username: string;
+  full_name: string | null;
+  avatar_url: string | null;
 };
 
 type AuthContextType = {
   user: User | null;
-  login: (email: string, password: string) => void;
-  logout: () => void;
+  profile: UserProfile | null;
+  session: Session | null;
+  isLoading: boolean;
+  signUp: (email: string, password: string, fullName?: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
   isAuthenticated: boolean;
   isAdmin: boolean;
 };
@@ -22,72 +28,189 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const login = (email: string, password: string) => {
-    // For demo purposes, hardcoded credentials
-    if (email === "admin@example.com" && password === "admin123") {
-      const userData = {
-        id: 1,
-        name: "Admin User",
-        email: "admin@example.com",
-        role: "admin",
-      };
-      setUser(userData);
-      localStorage.setItem("user", JSON.stringify(userData));
-      toast({
-        title: "Login successful",
-        description: "Welcome back, Admin!",
-      });
-      navigate("/admin");
-    } else if (email && password) {
-      // Regular user login (simplified)
-      const userData = {
-        id: 2,
-        name: "Regular User",
+  useEffect(() => {
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, currentSession) => {
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
+        
+        if (event === 'SIGNED_IN' && currentSession?.user) {
+          // Fetch user profile data
+          setTimeout(() => {
+            fetchUserProfile(currentSession.user.id);
+          }, 0);
+        } else if (event === 'SIGNED_OUT') {
+          setProfile(null);
+        }
+      }
+    );
+
+    // Then check for existing session
+    const initializeAuth = async () => {
+      setIsLoading(true);
+      try {
+        const { data: { session: initialSession } } = await supabase.auth.getSession();
+        setSession(initialSession);
+        setUser(initialSession?.user ?? null);
+        
+        if (initialSession?.user) {
+          await fetchUserProfile(initialSession.user.id);
+        }
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+        toast({
+          title: "Authentication Error",
+          description: "Failed to initialize authentication.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initializeAuth();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
+
+      if (error) {
+        throw error;
+      }
+
+      if (data) {
+        setProfile(data as UserProfile);
+      }
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+    }
+  };
+
+  const signUp = async (email: string, password: string, fullName?: string) => {
+    try {
+      const { data, error } = await supabase.auth.signUp({
         email,
-        role: "user",
-      };
-      setUser(userData);
-      localStorage.setItem("user", JSON.stringify(userData));
-      toast({
-        title: "Login successful",
-        description: "Welcome back!",
+        password,
+        options: {
+          data: {
+            full_name: fullName || email,
+          },
+        },
       });
-      navigate("/");
-    } else {
+
+      if (error) {
+        throw error;
+      }
+
       toast({
-        title: "Login failed",
-        description: "Invalid credentials",
+        title: "Sign up successful",
+        description: "Please check your email to verify your account.",
+      });
+      
+      // In development, we can assume the user is verified
+      if (data.session) {
+        setSession(data.session);
+        setUser(data.user);
+        navigate('/');
+      }
+    } catch (error: any) {
+      toast({
+        title: "Sign up failed",
+        description: error.message || "Failed to create account",
         variant: "destructive",
       });
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem("user");
-    toast({
-      title: "Logged out",
-      description: "You have been logged out successfully",
-    });
-    navigate("/");
+  const login = async (email: string, password: string) => {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      setSession(data.session);
+      setUser(data.user);
+      
+      toast({
+        title: "Login successful",
+        description: "Welcome back!",
+      });
+      
+      navigate('/');
+    } catch (error: any) {
+      toast({
+        title: "Login failed",
+        description: error.message || "Invalid credentials",
+        variant: "destructive",
+      });
+    }
   };
 
-  // Check for existing login session on component mount
-  React.useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
+  const logout = async () => {
+    try {
+      await supabase.auth.signOut();
+      setUser(null);
+      setSession(null);
+      setProfile(null);
+      
+      toast({
+        title: "Logged out",
+        description: "You have been logged out successfully",
+      });
+      
+      navigate('/');
+    } catch (error: any) {
+      toast({
+        title: "Logout failed",
+        description: error.message || "Failed to log out",
+        variant: "destructive",
+      });
     }
-  }, []);
+  };
 
   const isAuthenticated = !!user;
-  const isAdmin = user?.role === "admin";
+  // For now, let's consider a user an admin if they have a specific email domain
+  // In a real app, you would store this in the database
+  const isAdmin = isAuthenticated && (
+    user?.email?.endsWith('@admin.com') || 
+    user?.email === 'admin@example.com'
+  );
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isAuthenticated, isAdmin }}>
+    <AuthContext.Provider 
+      value={{ 
+        user, 
+        profile, 
+        session, 
+        isLoading, 
+        signUp, 
+        login, 
+        logout, 
+        isAuthenticated, 
+        isAdmin 
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
