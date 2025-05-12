@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import AdminLayout from "@/components/layout/AdminLayout";
 import { 
@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, Save, X, Upload, ImageIcon } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -31,7 +31,9 @@ const formSchema = z.object({
   transmission: z.string().min(1, { message: "Transmission is required." }),
   location: z.string().min(1, { message: "Location is required." }),
   featured: z.boolean().default(false),
-  image: z.string().min(1, { message: "Image URL is required." }),
+  image: z.string().min(1, { message: "Primary image URL is required." }),
+  // New field for additional images
+  additionalImages: z.array(z.string()).default([]),
   // Additional fields for detailed specs
   bodyType: z.string().min(1, { message: "Body type is required." }),
   doors: z.coerce.number().min(1, { message: "Number of doors is required." }),
@@ -63,6 +65,7 @@ const AdminVehicleForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEditing = id !== undefined;
+  const [imageInputValue, setImageInputValue] = useState("");
   
   // Find vehicle if editing
   const existingVehicle = isEditing 
@@ -81,6 +84,7 @@ const AdminVehicleForm = () => {
         location: existingVehicle.location,
         featured: existingVehicle.featured,
         image: existingVehicle.image,
+        additionalImages: Array(4).fill(existingVehicle.image), // Mock data for additional images
         // Additional mock data since it doesn't exist in the original data
         bodyType: "SUV",
         doors: 4,
@@ -104,6 +108,7 @@ const AdminVehicleForm = () => {
       }
     : {
         featured: false,
+        additionalImages: [],
         airConditioning: false,
         leatherInterior: false,
         electricWindows: false,
@@ -139,6 +144,23 @@ const AdminVehicleForm = () => {
       navigate("/admin/vehicles");
     }, 1500);
   };
+  
+  // Function to add a new image URL to the additionalImages array
+  const addImageUrl = () => {
+    if (!imageInputValue.trim()) return;
+    
+    const currentImages = form.getValues("additionalImages") || [];
+    form.setValue("additionalImages", [...currentImages, imageInputValue]);
+    setImageInputValue("");
+  };
+  
+  // Function to remove an image from the additionalImages array
+  const removeImage = (index: number) => {
+    const currentImages = form.getValues("additionalImages") || [];
+    const newImages = [...currentImages];
+    newImages.splice(index, 1);
+    form.setValue("additionalImages", newImages);
+  };
 
   return (
     <AdminLayout>
@@ -156,6 +178,7 @@ const AdminVehicleForm = () => {
               <Tabs defaultValue="basic">
                 <TabsList className="mb-4">
                   <TabsTrigger value="basic">Basic Information</TabsTrigger>
+                  <TabsTrigger value="images">Images</TabsTrigger>
                   <TabsTrigger value="specs">Specifications</TabsTrigger>
                   <TabsTrigger value="features">Features</TabsTrigger>
                 </TabsList>
@@ -237,7 +260,7 @@ const AdminVehicleForm = () => {
                       name="image"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Image URL</FormLabel>
+                          <FormLabel>Primary Image URL</FormLabel>
                           <FormControl>
                             <Input placeholder="https://example.com/car.jpg" {...field} />
                           </FormControl>
@@ -317,6 +340,55 @@ const AdminVehicleForm = () => {
                           </FormItem>
                         )}
                       />
+                    </div>
+                  </div>
+                </TabsContent>
+                
+                {/* New Images Tab */}
+                <TabsContent value="images" className="space-y-4">
+                  <div>
+                    <h3 className="text-lg font-medium mb-2">Additional Images</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Add multiple images to showcase your vehicle from different angles.
+                    </p>
+                    
+                    <div className="flex gap-2 mb-4">
+                      <Input 
+                        placeholder="Enter image URL" 
+                        value={imageInputValue}
+                        onChange={(e) => setImageInputValue(e.target.value)}
+                        className="flex-1"
+                      />
+                      <Button type="button" onClick={addImageUrl}>
+                        <Upload className="h-4 w-4 mr-2" />
+                        Add Image
+                      </Button>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                      {form.watch("additionalImages")?.map((img, index) => (
+                        <div key={index} className="relative group border rounded-md overflow-hidden">
+                          <div className="aspect-ratio-4/3 bg-gray-100 w-full h-48 relative">
+                            {img ? (
+                              <img src={img} alt={`Vehicle image ${index + 1}`} className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="flex items-center justify-center h-full">
+                                <ImageIcon className="h-12 w-12 text-gray-300" />
+                              </div>
+                            )}
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="icon"
+                              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => removeImage(index)}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <div className="p-2 bg-gray-50 text-xs truncate">{img}</div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </TabsContent>

@@ -10,10 +10,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { Card, CardContent } from "@/components/ui/card";
+import { useState } from "react";
 
 const VehicleDetail = () => {
   const { id } = useParams();
   const vehicle = vehicles.find(v => v.id === parseInt(id || "0"));
+  const [activeImage, setActiveImage] = useState(0);
   
   if (!vehicle) {
     return (
@@ -62,7 +64,7 @@ const VehicleDetail = () => {
     { name: "Engine Capacity", value: "2.0 ltr" }
   ];
 
-  // Mock gallery images (using the same image for demonstration)
+  // Include mock additional images (using the same image for demonstration)
   const galleryImages = [
     vehicle.image,
     vehicle.image,
@@ -100,29 +102,14 @@ const VehicleDetail = () => {
           </div>
         </div>
 
-        {/* Image Gallery */}
+        {/* Main Image Gallery */}
         <div className="mb-8">
           <div className="relative">
-            <AspectRatio ratio={16/9} className="bg-gray-100 rounded-lg overflow-hidden">
-              <img 
-                src={vehicle.image} 
-                alt={vehicle.title}
-                className="w-full h-full object-cover"
-              />
-            </AspectRatio>
-            {vehicle.featured && (
-              <Badge className="absolute top-4 right-4 bg-primary">
-                Featured
-              </Badge>
-            )}
-          </div>
-          
-          <div className="mt-4">
-            <Carousel>
+            <Carousel className="w-full">
               <CarouselContent>
                 {galleryImages.map((img, index) => (
-                  <CarouselItem key={index} className="basis-1/5">
-                    <AspectRatio ratio={16/9} className="bg-gray-100 rounded-lg overflow-hidden border-2 border-transparent hover:border-primary cursor-pointer">
+                  <CarouselItem key={index}>
+                    <AspectRatio ratio={16/9} className="bg-gray-100 rounded-lg overflow-hidden">
                       <img 
                         src={img} 
                         alt={`${vehicle.title} - image ${index + 1}`}
@@ -132,9 +119,35 @@ const VehicleDetail = () => {
                   </CarouselItem>
                 ))}
               </CarouselContent>
-              <CarouselPrevious className="left-0" />
-              <CarouselNext className="right-0" />
+              <CarouselPrevious className="left-2" />
+              <CarouselNext className="right-2" />
+              {vehicle.featured && (
+                <Badge className="absolute top-4 right-4 z-10 bg-primary">
+                  Featured
+                </Badge>
+              )}
             </Carousel>
+          </div>
+          
+          {/* Thumbnail Gallery */}
+          <div className="mt-4">
+            <div className="grid grid-cols-5 gap-2">
+              {galleryImages.map((img, index) => (
+                <div 
+                  key={index}
+                  className={`cursor-pointer rounded-md overflow-hidden border-2 ${activeImage === index ? 'border-primary' : 'border-transparent'}`}
+                  onClick={() => setActiveImage(index)}
+                >
+                  <AspectRatio ratio={16/9} className="bg-gray-100">
+                    <img 
+                      src={img} 
+                      alt={`${vehicle.title} - thumbnail ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </AspectRatio>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
