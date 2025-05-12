@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import AdminLayout from "@/components/layout/AdminLayout";
@@ -23,6 +22,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import ImageUploader from "@/components/admin/ImageUploader";
 
 // Define enum types to match Supabase database types
 const bodyTypes = ["SUV", "Sedan", "Hatchback", "Coupe", "Truck", "Van"] as const;
@@ -354,7 +354,18 @@ const AdminVehicleForm = () => {
     mutation.mutate(data);
   };
   
-  // Function to add a new image URL to the additionalImages array
+  // Function to handle image upload success
+  const handleImageUploaded = (imageUrl: string) => {
+    form.setValue("image", imageUrl);
+  };
+  
+  // Function to handle additional image upload success
+  const handleAdditionalImageUploaded = (imageUrl: string) => {
+    const currentImages = form.getValues("additionalImages") || [];
+    form.setValue("additionalImages", [...currentImages, imageUrl]);
+  };
+  
+  // Function to add a new image URL manually (keeping for compatibility)
   const addImageUrl = () => {
     if (!imageInputValue.trim()) return;
     
@@ -471,11 +482,48 @@ const AdminVehicleForm = () => {
                         control={form.control}
                         name="image"
                         render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Primary Image URL</FormLabel>
-                            <FormControl>
-                              <Input placeholder="https://example.com/car.jpg" {...field} />
-                            </FormControl>
+                          <FormItem className="col-span-2">
+                            <FormLabel>Primary Image</FormLabel>
+                            <div className="space-y-4">
+                              {/* Show current image if one exists */}
+                              {field.value && (
+                                <div className="relative w-full max-w-md aspect-video bg-gray-100 rounded-md overflow-hidden group">
+                                  <img 
+                                    src={field.value} 
+                                    alt="Primary vehicle image" 
+                                    className="w-full h-full object-cover"
+                                  />
+                                  <Button
+                                    type="button"
+                                    variant="destructive"
+                                    size="icon"
+                                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    onClick={() => form.setValue("image", "")}
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              )}
+                              
+                              {/* Show uploader if no image is selected */}
+                              {!field.value && session?.user && (
+                                <ImageUploader 
+                                  onImageUploaded={handleImageUploaded} 
+                                  userId={session.user.id} 
+                                />
+                              )}
+                              
+                              {/* Manual URL input option */}
+                              <div className="flex items-center gap-2">
+                                <FormControl>
+                                  <Input 
+                                    placeholder="Or enter image URL manually" 
+                                    value={field.value || ""} 
+                                    onChange={field.onChange}
+                                  />
+                                </FormControl>
+                              </div>
+                            </div>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -556,7 +604,7 @@ const AdminVehicleForm = () => {
                     </div>
                   </TabsContent>
                   
-                  {/* New Images Tab */}
+                  {/* Images Tab */}
                   <TabsContent value="images" className="space-y-4">
                     <div>
                       <h3 className="text-lg font-medium mb-2">Additional Images</h3>
@@ -564,9 +612,20 @@ const AdminVehicleForm = () => {
                         Add multiple images to showcase your vehicle from different angles.
                       </p>
                       
+                      {/* Drag and drop uploader for additional images */}
+                      {session?.user && (
+                        <div className="mb-6">
+                          <ImageUploader 
+                            onImageUploaded={handleAdditionalImageUploaded} 
+                            userId={session.user.id} 
+                          />
+                        </div>
+                      )}
+                      
+                      {/* Manual URL input option */}
                       <div className="flex gap-2 mb-4">
                         <Input 
-                          placeholder="Enter image URL" 
+                          placeholder="Or enter image URL manually" 
                           value={imageInputValue}
                           onChange={(e) => setImageInputValue(e.target.value)}
                           className="flex-1"
@@ -577,10 +636,11 @@ const AdminVehicleForm = () => {
                         </Button>
                       </div>
                       
+                      {/* Display additional images */}
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                         {form.watch("additionalImages")?.map((img, index) => (
                           <div key={index} className="relative group border rounded-md overflow-hidden">
-                            <div className="aspect-ratio-4/3 bg-gray-100 w-full h-48 relative">
+                            <div className="aspect-video bg-gray-100 w-full relative">
                               {img ? (
                                 <img src={img} alt={`Vehicle image ${index + 1}`} className="w-full h-full object-cover" />
                               ) : (

@@ -12,3 +12,35 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     storage: typeof window !== 'undefined' ? localStorage : undefined
   }
 });
+
+export const uploadVehicleImage = async (file: File, userId: string): Promise<string | null> => {
+  try {
+    // Generate a unique file name to avoid collisions
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${userId}-${Math.random().toString(36).substring(2, 15)}-${Date.now()}.${fileExt}`;
+    const filePath = `vehicles/${fileName}`;
+    
+    // Upload the file to Supabase Storage
+    const { error: uploadError, data } = await supabase.storage
+      .from('vehicle-images')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
+      
+    if (uploadError) {
+      console.error('Error uploading file:', uploadError);
+      return null;
+    }
+    
+    // Get the public URL for the uploaded file
+    const { data: { publicUrl } } = supabase.storage
+      .from('vehicle-images')
+      .getPublicUrl(filePath);
+      
+    return publicUrl;
+  } catch (error) {
+    console.error('Error in uploadVehicleImage:', error);
+    return null;
+  }
+};
