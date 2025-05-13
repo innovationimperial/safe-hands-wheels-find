@@ -20,6 +20,12 @@ export const uploadVehicleImage = async (file: File, userId: string): Promise<st
     const fileName = `${userId}-${Math.random().toString(36).substring(2, 15)}-${Date.now()}.${fileExt}`;
     const filePath = `vehicles/${fileName}`;
     
+    // Check if file is too large (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      console.error('File too large:', file.size);
+      throw new Error('File size exceeds 5MB limit');
+    }
+    
     // Upload the file to Supabase Storage
     const { error: uploadError, data } = await supabase.storage
       .from('vehicle-images')
@@ -42,5 +48,51 @@ export const uploadVehicleImage = async (file: File, userId: string): Promise<st
   } catch (error) {
     console.error('Error in uploadVehicleImage:', error);
     return null;
+  }
+};
+
+// Function to save multiple vehicle images to the vehicle_images table
+export const saveVehicleImages = async (vehicleId: string, imageUrls: string[]): Promise<boolean> => {
+  try {
+    // Create an array of objects to insert
+    const imagesToInsert = imageUrls.map(imageUrl => ({
+      vehicle_id: vehicleId,
+      image_url: imageUrl
+    }));
+    
+    // Insert all images
+    const { error } = await supabase
+      .from('vehicle_images')
+      .insert(imagesToInsert);
+    
+    if (error) {
+      console.error('Error saving vehicle images:', error);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error in saveVehicleImages:', error);
+    return false;
+  }
+};
+
+// Function to get all images for a vehicle
+export const getVehicleImages = async (vehicleId: string): Promise<string[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('vehicle_images')
+      .select('image_url')
+      .eq('vehicle_id', vehicleId);
+      
+    if (error || !data) {
+      console.error('Error fetching vehicle images:', error);
+      return [];
+    }
+    
+    return data.map(item => item.image_url);
+  } catch (error) {
+    console.error('Error in getVehicleImages:', error);
+    return [];
   }
 };

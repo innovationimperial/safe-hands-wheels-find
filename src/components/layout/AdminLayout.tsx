@@ -50,7 +50,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
           )}>
             {!collapsed && (
               <Link to="/admin" className="font-bold text-lg text-primary">
-                ZimAUTO
+                SafeHands
               </Link>
             )}
             <Button 

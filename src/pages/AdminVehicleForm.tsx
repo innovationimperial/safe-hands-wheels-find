@@ -1,878 +1,488 @@
-import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import AdminLayout from "@/components/layout/AdminLayout";
-import { 
-  Form, 
-  FormControl, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormMessage 
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Checkbox } from "@/components/ui/checkbox";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { ArrowLeft, Save, X, Upload, ImageIcon } from "lucide-react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import ImageUploader from "@/components/admin/ImageUploader";
 
-// Define enum types to match Supabase database types
-const bodyTypes = ["SUV", "Sedan", "Hatchback", "Coupe", "Truck", "Van"] as const;
-const fuelTypes = ["Gasoline", "Diesel", "Hybrid", "Electric"] as const;
-const transmissionTypes = ["Automatic", "Manual", "PDK", "CVT"] as const;
+import React from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import AdminLayout from '@/components/layout/AdminLayout';
+import MultipleImageUploader from '@/components/admin/MultipleImageUploader';
+import { useVehicleImages } from '@/hooks/use-vehicle-images';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-type BodyType = typeof bodyTypes[number];
-type FuelType = typeof fuelTypes[number];
-type TransmissionType = typeof transmissionTypes[number];
-
+// Define the form schema
 const formSchema = z.object({
-  title: z.string().min(2, { message: "Title must be at least 2 characters." }),
-  price: z.coerce.number().positive({ message: "Price must be a positive number." }),
-  year: z.coerce.number().min(1900, { message: "Year must be after 1900." }).max(new Date().getFullYear() + 1),
-  mileage: z.string().min(1, { message: "Mileage is required." }),
-  fuelType: z.enum(fuelTypes, { message: "Select a valid fuel type." }),
-  transmission: z.enum(transmissionTypes, { message: "Select a valid transmission." }),
-  location: z.string().min(1, { message: "Location is required." }),
+  title: z.string().min(1, "Title is required"),
+  year: z.coerce.number().min(1900, "Year must be 1900 or later").max(new Date().getFullYear() + 1),
+  price: z.coerce.number().min(0, "Price must be a positive number"),
+  mileage: z.string().min(1, "Mileage is required"),
+  color: z.string().min(1, "Color is required"),
+  body_type: z.enum(["Sedan", "SUV", "Truck", "Coupe", "Wagon", "Van", "Convertible", "Hatchback"]),
+  transmission: z.enum(["Automatic", "Manual"]),
+  fuel_type: z.enum(["Petrol", "Diesel", "Electric", "Hybrid"]),
+  engine_capacity: z.string().min(1, "Engine capacity is required"),
+  doors: z.coerce.number().min(1, "Doors must be at least 1"),
+  location: z.string().min(1, "Location is required"),
+  status: z.enum(["Available", "Pending", "Sold"]),
   featured: z.boolean().default(false),
-  image: z.string().min(1, { message: "Primary image URL is required." }),
-  bodyType: z.enum(bodyTypes, { message: "Select a valid body type." }),
-  doors: z.coerce.number().min(1, { message: "Number of doors is required." }),
-  color: z.string().min(1, { message: "Color is required." }),
-  engineCapacity: z.string().min(1, { message: "Engine capacity is required." }),
-  // Comfort features
-  airConditioning: z.boolean().default(false),
-  leatherInterior: z.boolean().default(false),
-  electricWindows: z.boolean().default(false),
-  cruiseControl: z.boolean().default(false),
-  dualZoneClimate: z.boolean().default(false),
-  pushToStart: z.boolean().default(false),
-  // Safety features
-  absBreaks: z.boolean().default(false),
-  parkingSensors: z.boolean().default(false),
-  parkAssist: z.boolean().default(false),
-  rearCamera: z.boolean().default(false),
-  centralLocking: z.boolean().default(false),
-  // Tech features
-  navigation: z.boolean().default(false),
-  radio: z.boolean().default(false),
-  automaticBoot: z.boolean().default(false),
-  steeringControls: z.boolean().default(false),
-  // Additional images
-  additionalImages: z.array(z.string()).default([]),
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
 const AdminVehicleForm = () => {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { session } = useAuth();
   const queryClient = useQueryClient();
-  const isEditing = id !== undefined;
-  const [imageInputValue, setImageInputValue] = useState("");
-  
-  // Fetch vehicle data if editing
-  const { data: vehicleData, isLoading: isLoadingVehicle } = useQuery({
-    queryKey: ['vehicle', id],
-    queryFn: async () => {
-      if (!id) return null;
-      
-      // Fetch vehicle details
-      const { data: vehicle, error: vehicleError } = await supabase
-        .from('vehicles')
-        .select('*')
-        .eq('id', id)
-        .single();
-      
-      if (vehicleError) throw vehicleError;
-      
-      // Fetch vehicle images
-      const { data: images, error: imagesError } = await supabase
-        .from('vehicle_images')
-        .select('image_url')
-        .eq('vehicle_id', id);
-      
-      if (imagesError) throw imagesError;
-      
-      // Fetch vehicle features
-      const { data: features, error: featuresError } = await supabase
-        .from('vehicle_features')
-        .select('category, feature, value')
-        .eq('vehicle_id', id);
-      
-      if (featuresError) throw featuresError;
-      
-      return {
-        ...vehicle,
-        additionalImages: images.map(img => img.image_url),
-        features: features || []
-      };
-    },
-    enabled: isEditing && !!session
-  });
-  
-  // Extract comfort features
-  const getFeatureValue = (category: string, feature: string) => {
-    if (!vehicleData?.features) return false;
-    const featureItem = vehicleData.features.find(f => f.category === category && f.feature === feature);
-    return featureItem ? featureItem.value : false;
-  };
-  
-  // Default values for form
-  const defaultValues: Partial<FormValues> = isEditing && vehicleData
-    ? {
-        title: vehicleData.title,
-        price: vehicleData.price,
-        year: vehicleData.year,
-        mileage: vehicleData.mileage,
-        fuelType: vehicleData.fuel_type as FuelType,
-        transmission: vehicleData.transmission as TransmissionType,
-        location: vehicleData.location,
-        featured: vehicleData.featured,
-        image: vehicleData.image,
-        additionalImages: vehicleData.additionalImages || [],
-        bodyType: vehicleData.body_type as BodyType,
-        doors: vehicleData.doors,
-        color: vehicleData.color,
-        engineCapacity: vehicleData.engine_capacity,
-        airConditioning: getFeatureValue('comfort', 'airConditioning'),
-        leatherInterior: getFeatureValue('comfort', 'leatherInterior'),
-        electricWindows: getFeatureValue('comfort', 'electricWindows'),
-        cruiseControl: getFeatureValue('comfort', 'cruiseControl'),
-        dualZoneClimate: getFeatureValue('comfort', 'dualZoneClimate'),
-        pushToStart: getFeatureValue('comfort', 'pushToStart'),
-        absBreaks: getFeatureValue('safety', 'absBreaks'),
-        parkingSensors: getFeatureValue('safety', 'parkingSensors'),
-        parkAssist: getFeatureValue('safety', 'parkAssist'),
-        rearCamera: getFeatureValue('safety', 'rearCamera'),
-        centralLocking: getFeatureValue('safety', 'centralLocking'),
-        navigation: getFeatureValue('technology', 'navigation'),
-        radio: getFeatureValue('technology', 'radio'),
-        automaticBoot: getFeatureValue('technology', 'automaticBoot'),
-        steeringControls: getFeatureValue('technology', 'steeringControls'),
-      }
-    : {
-        featured: false,
-        additionalImages: [],
-        airConditioning: false,
-        leatherInterior: false,
-        electricWindows: false,
-        cruiseControl: false,
-        dualZoneClimate: false,
-        pushToStart: false,
-        absBreaks: false,
-        parkingSensors: false,
-        parkAssist: false,
-        rearCamera: false,
-        centralLocking: false,
-        navigation: false,
-        radio: false,
-        automaticBoot: false,
-        steeringControls: false,
-      };
-  
+  const { user } = useAuth();
+  const { images, updateImages, saveImages } = useVehicleImages(id);
+
+  // Define the form with validation schema
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues,
+    defaultValues: {
+      title: "",
+      year: new Date().getFullYear(),
+      price: 0,
+      mileage: "",
+      color: "",
+      body_type: "Sedan" as const,
+      transmission: "Automatic" as const,
+      fuel_type: "Petrol" as const,
+      engine_capacity: "",
+      doors: 4,
+      location: "",
+      status: "Available" as const,
+      featured: false,
+    },
   });
-  
-  // Update form values when vehicle data is loaded
-  useEffect(() => {
-    if (vehicleData && isEditing) {
-      form.reset({
-        title: vehicleData.title,
-        price: vehicleData.price,
-        year: vehicleData.year,
-        mileage: vehicleData.mileage,
-        fuelType: vehicleData.fuel_type as FuelType,
-        transmission: vehicleData.transmission as TransmissionType,
-        location: vehicleData.location,
-        featured: vehicleData.featured,
-        image: vehicleData.image,
-        additionalImages: vehicleData.additionalImages || [],
-        bodyType: vehicleData.body_type as BodyType,
-        doors: vehicleData.doors,
-        color: vehicleData.color,
-        engineCapacity: vehicleData.engine_capacity,
-        airConditioning: getFeatureValue('comfort', 'airConditioning'),
-        leatherInterior: getFeatureValue('comfort', 'leatherInterior'),
-        electricWindows: getFeatureValue('comfort', 'electricWindows'),
-        cruiseControl: getFeatureValue('comfort', 'cruiseControl'),
-        dualZoneClimate: getFeatureValue('comfort', 'dualZoneClimate'),
-        pushToStart: getFeatureValue('comfort', 'pushToStart'),
-        absBreaks: getFeatureValue('safety', 'absBreaks'),
-        parkingSensors: getFeatureValue('safety', 'parkingSensors'),
-        parkAssist: getFeatureValue('safety', 'parkAssist'),
-        rearCamera: getFeatureValue('safety', 'rearCamera'),
-        centralLocking: getFeatureValue('safety', 'centralLocking'),
-        navigation: getFeatureValue('technology', 'navigation'),
-        radio: getFeatureValue('technology', 'radio'),
-        automaticBoot: getFeatureValue('technology', 'automaticBoot'),
-        steeringControls: getFeatureValue('technology', 'steeringControls'),
-      });
-    }
-  }, [vehicleData, isEditing, form]);
-  
-  // Mutation for creating/updating vehicle
+
+  // Fetch vehicle data if editing an existing vehicle
+  const { isLoading } = useQuery({
+    queryKey: ["vehicle", id],
+    enabled: !!id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("vehicles")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      if (data) {
+        // Reset form with fetched data
+        form.reset({
+          title: data.title,
+          year: data.year,
+          price: data.price,
+          mileage: data.mileage,
+          color: data.color,
+          body_type: data.body_type,
+          transmission: data.transmission,
+          fuel_type: data.fuel_type,
+          engine_capacity: data.engine_capacity,
+          doors: data.doors,
+          location: data.location,
+          status: data.status,
+          featured: data.featured,
+        });
+      }
+    },
+  });
+
+  // Create or update vehicle mutation
   const mutation = useMutation({
-    mutationFn: async (formData: FormValues) => {
-      if (!session?.user) throw new Error('Not authenticated');
-      
-      // Prepare vehicle data with properly typed enum values
+    mutationFn: async (values: FormValues) => {
+      if (!user) throw new Error("User not authenticated");
+
       const vehicleData = {
-        title: formData.title,
-        price: formData.price,
-        year: formData.year,
-        mileage: formData.mileage,
-        fuel_type: formData.fuelType as FuelType,
-        transmission: formData.transmission as TransmissionType,
-        location: formData.location,
-        featured: formData.featured,
-        image: formData.image,
-        body_type: formData.bodyType as BodyType,
-        doors: formData.doors,
-        color: formData.color,
-        engine_capacity: formData.engineCapacity,
-        user_id: session.user.id,
+        ...values,
+        user_id: user.id,
+        image: images.length > 0 ? images[0] : "", // Set first image as the main image
       };
-      
-      let vehicleId = id;
-      
-      // Create or update vehicle
-      if (isEditing) {
-        const { error } = await supabase
-          .from('vehicles')
-          .update(vehicleData)
-          .eq('id', id);
-          
-        if (error) throw error;
-      } else {
+
+      if (id) {
+        // Update existing vehicle
         const { data, error } = await supabase
-          .from('vehicles')
-          .insert(vehicleData)
-          .select('id')
+          .from("vehicles")
+          .update(vehicleData)
+          .eq("id", id)
+          .select()
           .single();
-          
+
         if (error) throw error;
-        vehicleId = data.id;
+        await saveImages(id);
+        return data;
+      } else {
+        // Create new vehicle
+        const { data, error } = await supabase
+          .from("vehicles")
+          .insert(vehicleData)
+          .select()
+          .single();
+
+        if (error) throw error;
+        await saveImages(data.id);
+        return data;
       }
-      
-      // Handle additional images
-      if (formData.additionalImages.length > 0) {
-        // If editing, delete existing images first
-        if (isEditing) {
-          await supabase
-            .from('vehicle_images')
-            .delete()
-            .eq('vehicle_id', vehicleId);
-        }
-        
-        // Add new images
-        const imagesToInsert = formData.additionalImages.map(url => ({
-          vehicle_id: vehicleId,
-          image_url: url
-        }));
-        
-        const { error: imagesError } = await supabase
-          .from('vehicle_images')
-          .insert(imagesToInsert);
-          
-        if (imagesError) throw imagesError;
-      }
-      
-      // Handle features
-      const features = [
-        // Comfort features
-        { category: 'comfort', feature: 'airConditioning', value: formData.airConditioning },
-        { category: 'comfort', feature: 'leatherInterior', value: formData.leatherInterior },
-        { category: 'comfort', feature: 'electricWindows', value: formData.electricWindows },
-        { category: 'comfort', feature: 'cruiseControl', value: formData.cruiseControl },
-        { category: 'comfort', feature: 'dualZoneClimate', value: formData.dualZoneClimate },
-        { category: 'comfort', feature: 'pushToStart', value: formData.pushToStart },
-        // Safety features
-        { category: 'safety', feature: 'absBreaks', value: formData.absBreaks },
-        { category: 'safety', feature: 'parkingSensors', value: formData.parkingSensors },
-        { category: 'safety', feature: 'parkAssist', value: formData.parkAssist },
-        { category: 'safety', feature: 'rearCamera', value: formData.rearCamera },
-        { category: 'safety', feature: 'centralLocking', value: formData.centralLocking },
-        // Tech features
-        { category: 'technology', feature: 'navigation', value: formData.navigation },
-        { category: 'technology', feature: 'radio', value: formData.radio },
-        { category: 'technology', feature: 'automaticBoot', value: formData.automaticBoot },
-        { category: 'technology', feature: 'steeringControls', value: formData.steeringControls },
-      ];
-      
-      // If editing, delete existing features first
-      if (isEditing) {
-        await supabase
-          .from('vehicle_features')
-          .delete()
-          .eq('vehicle_id', vehicleId);
-      }
-      
-      // Add all features with vehicle_id
-      const featuresToInsert = features.map(feature => ({
-        ...feature,
-        vehicle_id: vehicleId
-      }));
-      
-      const { error: featuresError } = await supabase
-        .from('vehicle_features')
-        .insert(featuresToInsert);
-        
-      if (featuresError) throw featuresError;
-      
-      return vehicleId;
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["vehicles"] });
       toast({
-        title: isEditing ? "Vehicle updated!" : "Vehicle created!",
-        description: `The vehicle has been ${isEditing ? 'updated' : 'added'} successfully.`,
+        title: `Vehicle ${id ? "updated" : "created"} successfully`,
+        description: `The vehicle was ${id ? "updated" : "added"} to the database.`,
       });
-      queryClient.invalidateQueries({ queryKey: ['vehicles'] });
       navigate("/admin/vehicles");
     },
     onError: (error) => {
       console.error("Error saving vehicle:", error);
       toast({
         title: "Error",
-        description: `Failed to ${isEditing ? 'update' : 'create'} vehicle. ${error.message}`,
-        variant: "destructive"
+        description: `Failed to ${id ? "update" : "create"} vehicle. Please try again.`,
+        variant: "destructive",
       });
-    }
+    },
   });
-  
-  const onSubmit = (data: FormValues) => {
-    mutation.mutate(data);
-  };
-  
-  // Function to handle image upload success
-  const handleImageUploaded = (imageUrl: string) => {
-    form.setValue("image", imageUrl);
-  };
-  
-  // Function to handle additional image upload success
-  const handleAdditionalImageUploaded = (imageUrl: string) => {
-    const currentImages = form.getValues("additionalImages") || [];
-    form.setValue("additionalImages", [...currentImages, imageUrl]);
-  };
-  
-  // Function to add a new image URL manually (keeping for compatibility)
-  const addImageUrl = () => {
-    if (!imageInputValue.trim()) return;
-    
-    const currentImages = form.getValues("additionalImages") || [];
-    form.setValue("additionalImages", [...currentImages, imageInputValue]);
-    setImageInputValue("");
-  };
-  
-  // Function to remove an image from the additionalImages array
-  const removeImage = (index: number) => {
-    const currentImages = form.getValues("additionalImages") || [];
-    const newImages = [...currentImages];
-    newImages.splice(index, 1);
-    form.setValue("additionalImages", newImages);
+
+  // Handle form submission
+  const onSubmit = (values: FormValues) => {
+    mutation.mutate(values);
   };
 
   return (
     <AdminLayout>
-      <div className="mb-8">
-        <div className="flex items-center gap-4 mb-6">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/admin/vehicles")}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <h1 className="text-2xl font-bold">{isEditing ? "Edit" : "Add"} Vehicle</h1>
-        </div>
-        
-        {isLoadingVehicle && isEditing ? (
-          <div className="py-8 text-center">Loading vehicle data...</div>
-        ) : (
-          <div className="bg-white rounded-md border shadow-sm p-6">
+      <div className="max-w-4xl mx-auto">
+        <Card>
+          <CardHeader>
+            <CardTitle>{id ? "Edit" : "Add"} Vehicle</CardTitle>
+          </CardHeader>
+          <CardContent>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <Tabs defaultValue="basic">
-                  <TabsList className="mb-4">
-                    <TabsTrigger value="basic">Basic Information</TabsTrigger>
-                    <TabsTrigger value="images">Images</TabsTrigger>
-                    <TabsTrigger value="specs">Specifications</TabsTrigger>
-                    <TabsTrigger value="features">Features</TabsTrigger>
-                  </TabsList>
-                  
-                  <TabsContent value="basic" className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <FormField
-                        control={form.control}
-                        name="title"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Title</FormLabel>
-                            <FormControl>
-                              <Input placeholder="e.g. Ford Mustang GT" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="price"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Price ($)</FormLabel>
-                            <FormControl>
-                              <Input type="number" placeholder="e.g. 45000" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="year"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Year</FormLabel>
-                            <FormControl>
-                              <Input type="number" placeholder="e.g. 2023" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="mileage"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Mileage</FormLabel>
-                            <FormControl>
-                              <Input placeholder="e.g. 15,000 mi" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                {/* Vehicle Images */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    Vehicle Images <span className="text-red-500">*</span>
+                  </label>
+                  <MultipleImageUploader
+                    userId={user?.id || ""}
+                    onImagesUploaded={updateImages}
+                    existingImages={images}
+                    maxImages={5}
+                  />
+                  {images.length === 0 && (
+                    <p className="text-sm text-red-500">
+                      At least one image is required
+                    </p>
+                  )}
+                </div>
 
-                      <FormField
-                        control={form.control}
-                        name="location"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Location</FormLabel>
-                            <FormControl>
-                              <Input placeholder="e.g. Los Angeles, CA" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="image"
-                        render={({ field }) => (
-                          <FormItem className="col-span-2">
-                            <FormLabel>Primary Image</FormLabel>
-                            <div className="space-y-4">
-                              {/* Show current image if one exists */}
-                              {field.value && (
-                                <div className="relative w-full max-w-md aspect-video bg-gray-100 rounded-md overflow-hidden group">
-                                  <img 
-                                    src={field.value} 
-                                    alt="Primary vehicle image" 
-                                    className="w-full h-full object-cover"
-                                  />
-                                  <Button
-                                    type="button"
-                                    variant="destructive"
-                                    size="icon"
-                                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                                    onClick={() => form.setValue("image", "")}
-                                  >
-                                    <X className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              )}
-                              
-                              {/* Show uploader if no image is selected */}
-                              {!field.value && session?.user && (
-                                <ImageUploader 
-                                  onImageUploaded={handleImageUploaded} 
-                                  userId={session.user.id} 
-                                />
-                              )}
-                              
-                              {/* Manual URL input option */}
-                              <div className="flex items-center gap-2">
-                                <FormControl>
-                                  <Input 
-                                    placeholder="Or enter image URL manually" 
-                                    value={field.value || ""} 
-                                    onChange={field.onChange}
-                                  />
-                                </FormControl>
-                              </div>
-                            </div>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="fuelType"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Fuel Type</FormLabel>
-                            <FormControl>
-                              <RadioGroup 
-                                className="flex flex-wrap gap-4" 
-                                onValueChange={field.onChange} 
-                                value={field.value}
-                              >
-                                {fuelTypes.map((type) => (
-                                  <div key={type} className="flex items-center space-x-2">
-                                    <RadioGroupItem value={type} id={`fuel-${type}`} />
-                                    <label htmlFor={`fuel-${type}`}>{type}</label>
-                                  </div>
-                                ))}
-                              </RadioGroup>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="transmission"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Transmission</FormLabel>
-                            <FormControl>
-                              <RadioGroup 
-                                className="flex flex-wrap gap-4" 
-                                onValueChange={field.onChange} 
-                                value={field.value}
-                              >
-                                {transmissionTypes.map((type) => (
-                                  <div key={type} className="flex items-center space-x-2">
-                                    <RadioGroupItem value={type} id={`trans-${type}`} />
-                                    <label htmlFor={`trans-${type}`}>{type}</label>
-                                  </div>
-                                ))}
-                              </RadioGroup>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <div className="col-span-2">
-                        <FormField
-                          control={form.control}
-                          name="featured"
-                          render={({ field }) => (
-                            <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                              <FormControl>
-                                <Checkbox
-                                  checked={field.value}
-                                  onCheckedChange={field.onChange}
-                                />
-                              </FormControl>
-                              <div className="space-y-1 leading-none">
-                                <FormLabel>Featured Vehicle</FormLabel>
-                                <p className="text-sm text-muted-foreground">
-                                  Featured vehicles will be displayed prominently on the homepage.
-                                </p>
-                              </div>
-                            </FormItem>
-                          )}
+                {/* Basic Information */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="title"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Title</FormLabel>
+                        <FormControl>
+                          <Input placeholder="2023 Honda Civic" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="price"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Price ($)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            min="0"
+                            placeholder="25000"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="year"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Year</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            min="1900"
+                            max={new Date().getFullYear() + 1}
+                            placeholder="2023"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="mileage"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Mileage</FormLabel>
+                        <FormControl>
+                          <Input placeholder="15,000 km" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="color"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Color</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Red" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="location"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Location</FormLabel>
+                        <FormControl>
+                          <Input placeholder="New York, NY" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="engine_capacity"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Engine Capacity</FormLabel>
+                        <FormControl>
+                          <Input placeholder="2.0L" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="doors"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Doors</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            min="1"
+                            placeholder="4"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {/* Dropdown Fields */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="body_type"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Body Type</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select body type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Sedan">Sedan</SelectItem>
+                            <SelectItem value="SUV">SUV</SelectItem>
+                            <SelectItem value="Truck">Truck</SelectItem>
+                            <SelectItem value="Coupe">Coupe</SelectItem>
+                            <SelectItem value="Wagon">Wagon</SelectItem>
+                            <SelectItem value="Van">Van</SelectItem>
+                            <SelectItem value="Convertible">
+                              Convertible
+                            </SelectItem>
+                            <SelectItem value="Hatchback">Hatchback</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="transmission"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Transmission</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select transmission" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Automatic">Automatic</SelectItem>
+                            <SelectItem value="Manual">Manual</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="fuel_type"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Fuel Type</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select fuel type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Petrol">Petrol</SelectItem>
+                            <SelectItem value="Diesel">Diesel</SelectItem>
+                            <SelectItem value="Electric">Electric</SelectItem>
+                            <SelectItem value="Hybrid">Hybrid</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="status"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Status</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select status" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Available">Available</SelectItem>
+                            <SelectItem value="Pending">Pending</SelectItem>
+                            <SelectItem value="Sold">Sold</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {/* Featured Vehicle Toggle */}
+                <FormField
+                  control={form.control}
+                  name="featured"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
                         />
-                      </div>
-                    </div>
-                  </TabsContent>
-                  
-                  {/* Images Tab */}
-                  <TabsContent value="images" className="space-y-4">
-                    <div>
-                      <h3 className="text-lg font-medium mb-2">Additional Images</h3>
-                      <p className="text-sm text-muted-foreground mb-4">
-                        Add multiple images to showcase your vehicle from different angles.
-                      </p>
-                      
-                      {/* Drag and drop uploader for additional images */}
-                      {session?.user && (
-                        <div className="mb-6">
-                          <ImageUploader 
-                            onImageUploaded={handleAdditionalImageUploaded} 
-                            userId={session.user.id} 
-                          />
-                        </div>
-                      )}
-                      
-                      {/* Manual URL input option */}
-                      <div className="flex gap-2 mb-4">
-                        <Input 
-                          placeholder="Or enter image URL manually" 
-                          value={imageInputValue}
-                          onChange={(e) => setImageInputValue(e.target.value)}
-                          className="flex-1"
-                        />
-                        <Button type="button" onClick={addImageUrl}>
-                          <Upload className="h-4 w-4 mr-2" />
-                          Add Image
-                        </Button>
-                      </div>
-                      
-                      {/* Display additional images */}
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                        {form.watch("additionalImages")?.map((img, index) => (
-                          <div key={index} className="relative group border rounded-md overflow-hidden">
-                            <div className="aspect-video bg-gray-100 w-full relative">
-                              {img ? (
-                                <img src={img} alt={`Vehicle image ${index + 1}`} className="w-full h-full object-cover" />
-                              ) : (
-                                <div className="flex items-center justify-center h-full">
-                                  <ImageIcon className="h-12 w-12 text-gray-300" />
-                                </div>
-                              )}
-                              <Button
-                                type="button"
-                                variant="destructive"
-                                size="icon"
-                                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                                onClick={() => removeImage(index)}
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
-                            </div>
-                            <div className="p-2 bg-gray-50 text-xs truncate">{img}</div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </TabsContent>
-                  
-                  <TabsContent value="specs" className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <FormField
-                        control={form.control}
-                        name="bodyType"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Body Type</FormLabel>
-                            <FormControl>
-                              <RadioGroup 
-                                className="flex flex-wrap gap-4" 
-                                onValueChange={field.onChange} 
-                                value={field.value}
-                              >
-                                {bodyTypes.map((type) => (
-                                  <div key={type} className="flex items-center space-x-2">
-                                    <RadioGroupItem value={type} id={`body-${type}`} />
-                                    <label htmlFor={`body-${type}`}>{type}</label>
-                                  </div>
-                                ))}
-                              </RadioGroup>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="doors"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Number of Doors</FormLabel>
-                            <FormControl>
-                              <RadioGroup 
-                                className="flex gap-4" 
-                                onValueChange={(value) => field.onChange(parseInt(value))} 
-                                value={field.value?.toString()}
-                              >
-                                {[2, 3, 4, 5].map(num => (
-                                  <div key={num} className="flex items-center space-x-2">
-                                    <RadioGroupItem value={num.toString()} id={`doors-${num}`} />
-                                    <label htmlFor={`doors-${num}`}>{num}</label>
-                                  </div>
-                                ))}
-                              </RadioGroup>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="color"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Color</FormLabel>
-                            <FormControl>
-                              <Input placeholder="e.g. White" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="engineCapacity"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Engine Capacity</FormLabel>
-                            <FormControl>
-                              <Input placeholder="e.g. 2.0 ltr" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  </TabsContent>
-                  
-                  <TabsContent value="features" className="space-y-6">
-                    <div>
-                      <h3 className="text-lg font-medium mb-4">Comfort & Convenience</h3>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                        {[
-                          { name: "airConditioning", label: "Air Conditioning" },
-                          { name: "leatherInterior", label: "Leather Interior" },
-                          { name: "electricWindows", label: "Electric Windows" },
-                          { name: "cruiseControl", label: "Cruise Control" },
-                          { name: "dualZoneClimate", label: "Dual Zone Climate Control" },
-                          { name: "pushToStart", label: "Push to Start" },
-                        ].map((feature) => (
-                          <FormField
-                            key={feature.name}
-                            control={form.control}
-                            name={feature.name as any}
-                            render={({ field }) => (
-                              <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                                <FormControl>
-                                  <Checkbox
-                                    checked={field.value}
-                                    onCheckedChange={field.onChange}
-                                  />
-                                </FormControl>
-                                <FormLabel className="font-normal">
-                                  {feature.label}
-                                </FormLabel>
-                              </FormItem>
-                            )}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <h3 className="text-lg font-medium mb-4">Safety Features</h3>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                        {[
-                          { name: "absBreaks", label: "ABS Brakes" },
-                          { name: "parkingSensors", label: "Parking Sensors" },
-                          { name: "parkAssist", label: "Park Assist" },
-                          { name: "rearCamera", label: "Rear View Camera" },
-                          { name: "centralLocking", label: "Central Locking" },
-                        ].map((feature) => (
-                          <FormField
-                            key={feature.name}
-                            control={form.control}
-                            name={feature.name as any}
-                            render={({ field }) => (
-                              <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                                <FormControl>
-                                  <Checkbox
-                                    checked={field.value}
-                                    onCheckedChange={field.onChange}
-                                  />
-                                </FormControl>
-                                <FormLabel className="font-normal">
-                                  {feature.label}
-                                </FormLabel>
-                              </FormItem>
-                            )}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <h3 className="text-lg font-medium mb-4">Technology</h3>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                        {[
-                          { name: "navigation", label: "Navigation" },
-                          { name: "radio", label: "Radio" },
-                          { name: "automaticBoot", label: "Automatic Boot" },
-                          { name: "steeringControls", label: "Audio Controls on Steering Wheel" },
-                        ].map((feature) => (
-                          <FormField
-                            key={feature.name}
-                            control={form.control}
-                            name={feature.name as any}
-                            render={({ field }) => (
-                              <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                                <FormControl>
-                                  <Checkbox
-                                    checked={field.value}
-                                    onCheckedChange={field.onChange}
-                                  />
-                                </FormControl>
-                                <FormLabel className="font-normal">
-                                  {feature.label}
-                                </FormLabel>
-                              </FormItem>
-                            )}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  </TabsContent>
-                </Tabs>
-                
-                <div className="flex gap-4 justify-end pt-4 border-t">
-                  <Button 
-                    type="button" 
-                    variant="outline" 
+                      </FormControl>
+                      <FormLabel>Featured Vehicle</FormLabel>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Form Actions */}
+                <div className="flex justify-end space-x-2">
+                  <Button
+                    type="button"
+                    variant="outline"
                     onClick={() => navigate("/admin/vehicles")}
-                    disabled={mutation.isPending}
                   >
                     Cancel
                   </Button>
                   <Button 
-                    type="submit"
-                    disabled={mutation.isPending}
+                    type="submit" 
+                    disabled={mutation.isPending || isLoading || images.length === 0}
                   >
-                    {mutation.isPending ? (
-                      <span>Saving...</span>
-                    ) : (
-                      <>
-                        <Save className="mr-2 h-4 w-4" />
-                        {isEditing ? "Update" : "Save"} Vehicle
-                      </>
-                    )}
+                    {mutation.isPending ? "Saving..." : id ? "Update" : "Create"}
                   </Button>
                 </div>
               </form>
             </Form>
-          </div>
-        )}
+          </CardContent>
+        </Card>
       </div>
     </AdminLayout>
   );
