@@ -31,6 +31,12 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
+// Define body type that matches the database enum
+type DatabaseBodyType = "SUV" | "Sedan" | "Hatchback" | "Coupe" | "Truck" | "Van";
+type DatabaseFuelType = "Gasoline" | "Diesel" | "Hybrid" | "Electric";
+type DatabaseTransmissionType = "Automatic" | "Manual" | "PDK" | "CVT";
+type DatabaseVehicleStatus = "Available" | "Sold" | "Reserved";
+
 // Define the form schema
 const formSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -38,7 +44,7 @@ const formSchema = z.object({
   price: z.coerce.number().min(0, "Price must be a positive number"),
   mileage: z.string().min(1, "Mileage is required"),
   color: z.string().min(1, "Color is required"),
-  body_type: z.enum(["Sedan", "SUV", "Truck", "Coupe", "Wagon", "Van", "Convertible", "Hatchback"]),
+  body_type: z.enum(["SUV", "Sedan", "Truck", "Coupe", "Van", "Hatchback"]),
   transmission: z.enum(["Automatic", "Manual"]),
   fuel_type: z.enum(["Petrol", "Diesel", "Electric", "Hybrid"]),
   engine_capacity: z.string().min(1, "Engine capacity is required"),
@@ -91,8 +97,15 @@ const AdminVehicleForm = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: (data) => {
+    onSettled: (data) => {
       if (data) {
+        // Map fuel_type from database to form values
+        let mappedFuelType = data.fuel_type;
+        // Map "Gasoline" to "Petrol" for display in form
+        if (mappedFuelType === "Gasoline") {
+          mappedFuelType = "Petrol";
+        }
+        
         // Reset form with fetched data
         form.reset({
           title: data.title,
@@ -100,13 +113,13 @@ const AdminVehicleForm = () => {
           price: data.price,
           mileage: data.mileage,
           color: data.color,
-          body_type: data.body_type,
-          transmission: data.transmission,
-          fuel_type: data.fuel_type,
+          body_type: data.body_type as any,
+          transmission: data.transmission as any,
+          fuel_type: mappedFuelType as any,
           engine_capacity: data.engine_capacity,
           doors: data.doors,
           location: data.location,
-          status: data.status,
+          status: data.status as any,
           featured: data.featured,
         });
       }
@@ -117,9 +130,17 @@ const AdminVehicleForm = () => {
   const mutation = useMutation({
     mutationFn: async (values: FormValues) => {
       if (!user) throw new Error("User not authenticated");
+      
+      // Map form values to database values
+      let mappedFuelType = values.fuel_type;
+      // Map "Petrol" to "Gasoline" for storage in database
+      if (mappedFuelType === "Petrol") {
+        mappedFuelType = "Gasoline";
+      }
 
       const vehicleData = {
         ...values,
+        fuel_type: mappedFuelType as DatabaseFuelType,
         user_id: user.id,
         image: images.length > 0 ? images[0] : "", // Set first image as the main image
       };
@@ -128,7 +149,7 @@ const AdminVehicleForm = () => {
         // Update existing vehicle
         const { data, error } = await supabase
           .from("vehicles")
-          .update(vehicleData)
+          .update(vehicleData as any)
           .eq("id", id)
           .select()
           .single();
@@ -140,7 +161,7 @@ const AdminVehicleForm = () => {
         // Create new vehicle
         const { data, error } = await supabase
           .from("vehicles")
-          .insert(vehicleData)
+          .insert(vehicleData as any)
           .select()
           .single();
 
@@ -173,318 +194,312 @@ const AdminVehicleForm = () => {
   };
 
   return (
-    <AdminLayout>
-      <div className="max-w-4xl mx-auto">
-        <Card>
-          <CardHeader>
-            <CardTitle>{id ? "Edit" : "Add"} Vehicle</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                {/* Vehicle Images */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                    Vehicle Images <span className="text-red-500">*</span>
-                  </label>
-                  <MultipleImageUploader
-                    userId={user?.id || ""}
-                    onImagesUploaded={updateImages}
-                    existingImages={images}
-                    maxImages={5}
-                  />
-                  {images.length === 0 && (
-                    <p className="text-sm text-red-500">
-                      At least one image is required
-                    </p>
-                  )}
-                </div>
+    <div className="max-w-4xl mx-auto">
+      <Card>
+        <CardHeader>
+          <CardTitle>{id ? "Edit" : "Add"} Vehicle</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              {/* Vehicle Images */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                  Vehicle Images <span className="text-red-500">*</span>
+                </label>
+                <MultipleImageUploader
+                  userId={user?.id || ""}
+                  onImagesUploaded={updateImages}
+                  existingImages={images}
+                  maxImages={5}
+                />
+                {images.length === 0 && (
+                  <p className="text-sm text-red-500">
+                    At least one image is required
+                  </p>
+                )}
+              </div>
 
-                {/* Basic Information */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="title"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Title</FormLabel>
-                        <FormControl>
-                          <Input placeholder="2023 Honda Civic" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="price"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Price ($)</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            min="0"
-                            placeholder="25000"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="year"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Year</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            min="1900"
-                            max={new Date().getFullYear() + 1}
-                            placeholder="2023"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="mileage"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Mileage</FormLabel>
-                        <FormControl>
-                          <Input placeholder="15,000 km" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="color"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Color</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Red" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="location"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Location</FormLabel>
-                        <FormControl>
-                          <Input placeholder="New York, NY" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="engine_capacity"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Engine Capacity</FormLabel>
-                        <FormControl>
-                          <Input placeholder="2.0L" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="doors"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Doors</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            min="1"
-                            placeholder="4"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                {/* Dropdown Fields */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="body_type"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Body Type</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select body type" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="Sedan">Sedan</SelectItem>
-                            <SelectItem value="SUV">SUV</SelectItem>
-                            <SelectItem value="Truck">Truck</SelectItem>
-                            <SelectItem value="Coupe">Coupe</SelectItem>
-                            <SelectItem value="Wagon">Wagon</SelectItem>
-                            <SelectItem value="Van">Van</SelectItem>
-                            <SelectItem value="Convertible">
-                              Convertible
-                            </SelectItem>
-                            <SelectItem value="Hatchback">Hatchback</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="transmission"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Transmission</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select transmission" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="Automatic">Automatic</SelectItem>
-                            <SelectItem value="Manual">Manual</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="fuel_type"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Fuel Type</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select fuel type" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="Petrol">Petrol</SelectItem>
-                            <SelectItem value="Diesel">Diesel</SelectItem>
-                            <SelectItem value="Electric">Electric</SelectItem>
-                            <SelectItem value="Hybrid">Hybrid</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="status"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Status</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select status" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="Available">Available</SelectItem>
-                            <SelectItem value="Pending">Pending</SelectItem>
-                            <SelectItem value="Sold">Sold</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                {/* Featured Vehicle Toggle */}
+              {/* Basic Information */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
-                  name="featured"
+                  name="title"
                   render={({ field }) => (
-                    <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                    <FormItem>
+                      <FormLabel>Title</FormLabel>
                       <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
+                        <Input placeholder="2023 Honda Civic" {...field} />
                       </FormControl>
-                      <FormLabel>Featured Vehicle</FormLabel>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
 
-                {/* Form Actions */}
-                <div className="flex justify-end space-x-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => navigate("/admin/vehicles")}
-                  >
-                    Cancel
-                  </Button>
-                  <Button 
-                    type="submit" 
-                    disabled={mutation.isPending || isLoading || images.length === 0}
-                  >
-                    {mutation.isPending ? "Saving..." : id ? "Update" : "Create"}
-                  </Button>
-                </div>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
-      </div>
-    </AdminLayout>
+                <FormField
+                  control={form.control}
+                  name="price"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Price ($)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="0"
+                          placeholder="25000"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="year"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Year</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="1900"
+                          max={new Date().getFullYear() + 1}
+                          placeholder="2023"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="mileage"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Mileage</FormLabel>
+                      <FormControl>
+                        <Input placeholder="15,000 km" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="color"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Color</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Red" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="location"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Location</FormLabel>
+                      <FormControl>
+                        <Input placeholder="New York, NY" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="engine_capacity"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Engine Capacity</FormLabel>
+                      <FormControl>
+                        <Input placeholder="2.0L" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="doors"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Doors</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="1"
+                          placeholder="4"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* Dropdown Fields */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="body_type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Body Type</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select body type" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="SUV">SUV</SelectItem>
+                          <SelectItem value="Sedan">Sedan</SelectItem>
+                          <SelectItem value="Truck">Truck</SelectItem>
+                          <SelectItem value="Coupe">Coupe</SelectItem>
+                          <SelectItem value="Van">Van</SelectItem>
+                          <SelectItem value="Hatchback">Hatchback</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="transmission"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Transmission</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select transmission" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Automatic">Automatic</SelectItem>
+                          <SelectItem value="Manual">Manual</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="fuel_type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Fuel Type</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select fuel type" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Petrol">Petrol</SelectItem>
+                          <SelectItem value="Diesel">Diesel</SelectItem>
+                          <SelectItem value="Electric">Electric</SelectItem>
+                          <SelectItem value="Hybrid">Hybrid</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Status</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select status" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Available">Available</SelectItem>
+                          <SelectItem value="Pending">Pending</SelectItem>
+                          <SelectItem value="Sold">Sold</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* Featured Vehicle Toggle */}
+              <FormField
+                control={form.control}
+                name="featured"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormLabel>Featured Vehicle</FormLabel>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Form Actions */}
+              <div className="flex justify-end space-x-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => navigate("/admin/vehicles")}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={mutation.isPending || isLoading || images.length === 0}
+                >
+                  {mutation.isPending ? "Saving..." : id ? "Update" : "Create"}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
