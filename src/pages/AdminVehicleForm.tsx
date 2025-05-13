@@ -37,6 +37,9 @@ type DatabaseFuelType = "Gasoline" | "Diesel" | "Hybrid" | "Electric";
 type DatabaseTransmissionType = "Automatic" | "Manual" | "PDK" | "CVT";
 type DatabaseVehicleStatus = "Available" | "Sold" | "Reserved";
 
+// Define form fuel type that includes "Petrol" which will map to "Gasoline" in the database
+type FormFuelType = "Petrol" | "Diesel" | "Hybrid" | "Electric";
+
 // Define the form schema
 const formSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -97,7 +100,7 @@ const AdminVehicleForm = () => {
       if (error) throw error;
       return data;
     },
-    onSettled: (data) => {
+    onSuccess: (data) => {
       if (data) {
         // Map fuel_type from database to form values
         let mappedFuelType = data.fuel_type;
@@ -115,7 +118,7 @@ const AdminVehicleForm = () => {
           color: data.color,
           body_type: data.body_type as any,
           transmission: data.transmission as any,
-          fuel_type: mappedFuelType as any,
+          fuel_type: mappedFuelType as FormFuelType,
           engine_capacity: data.engine_capacity,
           doors: data.doors,
           location: data.location,
@@ -149,7 +152,7 @@ const AdminVehicleForm = () => {
         // Update existing vehicle
         const { data, error } = await supabase
           .from("vehicles")
-          .update(vehicleData as any)
+          .update(vehicleData)
           .eq("id", id)
           .select()
           .single();
@@ -161,7 +164,7 @@ const AdminVehicleForm = () => {
         // Create new vehicle
         const { data, error } = await supabase
           .from("vehicles")
-          .insert(vehicleData as any)
+          .insert(vehicleData)
           .select()
           .single();
 
