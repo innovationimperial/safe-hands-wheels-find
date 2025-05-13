@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useQueryClient, useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
+import { toast } from '@/components/ui/use-toast';
 import { VehicleFormValues } from '@/schemas/vehicleSchema';
 import { useVehicleImages } from '@/hooks/use-vehicle-images';
 import { mapFuelTypeToDatabase, DatabaseFuelType, DatabaseVehicleStatus } from '@/types/vehicle';
@@ -33,11 +33,21 @@ export function useVehicleForm(vehicleId?: string) {
       }
 
       const vehicleData = {
-        ...values,
+        title: values.title,
+        year: values.year,
+        price: values.price,
+        mileage: values.mileage,
+        color: values.color,
+        body_type: values.body_type,
+        transmission: values.transmission,
+        engine_capacity: values.engine_capacity,
+        doors: values.doors,
+        location: values.location,
         fuel_type: mappedFuelType,
         status: dbStatus,
         user_id: userResponse.data.user.id,
         image: images.length > 0 ? images[0] : "", // Set first image as the main image
+        featured: values.featured
       };
 
       if (vehicleId) {

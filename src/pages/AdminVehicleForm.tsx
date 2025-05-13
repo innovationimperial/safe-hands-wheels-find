@@ -9,7 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import AdminLayout from '@/components/layout/AdminLayout';
 import { Form } from '@/components/ui/form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { vehicleFormSchema } from '@/schemas/vehicleSchema';
+import { vehicleFormSchema, VehicleFormValues } from '@/schemas/vehicleSchema';
 import { mapFuelTypeFromDatabase } from '@/types/vehicle';
 import { useVehicleImages } from '@/hooks/use-vehicle-images';
 import { useVehicleForm } from '@/hooks/use-vehicle-form';
@@ -26,7 +26,7 @@ const AdminVehicleForm = () => {
   const { isSubmitting, submitForm } = useVehicleForm(id);
 
   // Define the form with validation schema
-  const form = useForm({
+  const form = useForm<VehicleFormValues>({
     resolver: zodResolver(vehicleFormSchema),
     defaultValues: {
       title: "",
@@ -34,13 +34,13 @@ const AdminVehicleForm = () => {
       price: 0,
       mileage: "",
       color: "",
-      body_type: "Sedan" as const,
-      transmission: "Automatic" as const,
-      fuel_type: "Petrol" as const,
+      body_type: "Sedan",
+      transmission: "Automatic",
+      fuel_type: "Petrol",
       engine_capacity: "",
       doors: 4,
       location: "",
-      status: "Available" as const,
+      status: "Available",
       featured: false,
     },
   });
@@ -87,11 +87,11 @@ const AdminVehicleForm = () => {
           featured: data.featured,
         });
       }
-    },
+    }
   });
 
   // Handle form submission
-  const onSubmit = (values) => {
+  const onSubmit = (values: VehicleFormValues) => {
     // Check if at least one image is uploaded
     if (images.length === 0) {
       return;
