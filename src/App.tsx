@@ -11,36 +11,15 @@ import SellCar from "./pages/SellCar";
 import VehicleDetail from "./pages/VehicleDetail";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
-// Admin Pages
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminVehicles from "./pages/AdminVehicles";
 import AdminVehicleForm from "./pages/AdminVehicleForm";
 import AdminUsers from "./pages/AdminUsers";
 import { AuthProvider } from "./contexts/AuthContext";
 import { useState } from "react";
+import Layout from "./components/layout/Layout";
+import AdminLayout from "./components/layout/AdminLayout";
 
-// Separate the routes into their own component
-const AppRoutes = () => {
-  return (
-    <Routes>
-      <Route path="/" element={<Index />} />
-      <Route path="/buy-car" element={<BuyCar />} />
-      <Route path="/find-dealer" element={<FindDealer />} />
-      <Route path="/sell-car" element={<SellCar />} />
-      <Route path="/vehicle/:id" element={<VehicleDetail />} />
-      <Route path="/auth" element={<Auth />} />
-      {/* Admin Routes */}
-      <Route path="/admin" element={<AdminDashboard />} />
-      <Route path="/admin/vehicles" element={<AdminVehicles />} />
-      <Route path="/admin/vehicles/add" element={<AdminVehicleForm />} />
-      <Route path="/admin/vehicles/edit/:id" element={<AdminVehicleForm />} />
-      <Route path="/admin/users" element={<AdminUsers />} />
-      <Route path="*" element={<NotFound />} />
-    </Routes>
-  );
-};
-
-// Fix the App component to ensure hooks are used correctly
 function App() {
   // Create QueryClient inside the function component
   const [queryClient] = useState(() => new QueryClient());
@@ -52,7 +31,25 @@ function App() {
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
-            <AppRoutes />
+            <Routes>
+              {/* Main website routes with Layout */}
+              <Route path="/" element={<Layout><Index /></Layout>} />
+              <Route path="/buy-car" element={<Layout><BuyCar /></Layout>} />
+              <Route path="/find-dealer" element={<Layout><FindDealer /></Layout>} />
+              <Route path="/sell-car" element={<Layout><SellCar /></Layout>} />
+              <Route path="/vehicle/:id" element={<Layout><VehicleDetail /></Layout>} />
+              <Route path="/auth" element={<Layout><Auth /></Layout>} />
+              
+              {/* Admin routes with AdminLayout */}
+              <Route path="/admin" element={<AdminLayout><AdminDashboard /></AdminLayout>} />
+              <Route path="/admin/vehicles" element={<AdminLayout><AdminVehicles /></AdminLayout>} />
+              <Route path="/admin/vehicles/add" element={<AdminLayout><AdminVehicleForm /></AdminLayout>} />
+              <Route path="/admin/vehicles/edit/:id" element={<AdminLayout><AdminVehicleForm /></AdminLayout>} />
+              <Route path="/admin/users" element={<AdminLayout><AdminUsers /></AdminLayout>} />
+              
+              {/* 404 route */}
+              <Route path="*" element={<Layout><NotFound /></Layout>} />
+            </Routes>
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>

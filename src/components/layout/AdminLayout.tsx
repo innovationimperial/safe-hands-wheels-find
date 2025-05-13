@@ -11,10 +11,12 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 
 const AdminLayout = ({ children }: { children: React.ReactNode }) => {
   const [collapsed, setCollapsed] = React.useState(false);
   const location = useLocation();
+  const { logout } = useAuth();
   
   const navItems = [
     { 
@@ -96,6 +98,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
                 "text-gray-700 w-full justify-start",
                 collapsed ? "justify-center" : ""
               )}
+              onClick={logout}
             >
               <LogOut className="w-5 h-5" />
               {!collapsed && <span className="ml-2">Log Out</span>}
