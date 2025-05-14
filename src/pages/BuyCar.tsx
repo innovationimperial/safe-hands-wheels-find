@@ -1,20 +1,35 @@
 
 import React, { useState, useEffect } from "react";
 import Layout from "@/components/layout/Layout";
-import { vehicles } from "@/data/vehicles";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Fuel, Clock, MapPin, Filter, Search, X } from "lucide-react";
+import { Fuel, Clock, MapPin, Filter, Search, X, Loader2 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Separator } from "@/components/ui/separator";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import type { Vehicle } from "@/data/vehicles";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Skeleton } from "@/components/ui/skeleton";
+
+// Define the Vehicle interface based on your database schema
+interface Vehicle {
+  id: string;
+  title: string;
+  price: number;
+  year: number;
+  mileage: string;
+  fuel_type: string;
+  transmission: string;
+  location: string;
+  featured: boolean;
+  image: string;
+  body_type: string;
+}
 
 const BuyCar = () => {
   const location = useLocation();
@@ -28,38 +43,39 @@ const BuyCar = () => {
   const [fuelTypes, setFuelTypes] = useState<string[]>([]);
   const [transmissions, setTransmissions] = useState<string[]>([]);
   const [isFilterOpen, setIsFilterOpen] = useState<boolean>(true);
-  const [filteredVehicles, setFilteredVehicles] = useState<Vehicle[]>(vehicles);
+
+  // Fetch all available vehicles
+  const { data: allVehicles, isLoading, error } = useQuery({
+    queryKey: ["allVehicles"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("vehicles")
+        .select("*")
+        .eq("status", "Available");
+      
+      if (error) {
+        console.error("Error fetching vehicles:", error);
+        throw error;
+      }
+      
+      return data as Vehicle[] || [];
+    },
+  });
 
   // Apply filters
-  useEffect(() => {
-    let results = vehicles;
+  const filteredVehicles = React.useMemo(() => {
+    if (!allVehicles) return [];
+    
+    let results = [...allVehicles];
     
     // Filter by body type
     if (bodyType) {
-      // Map displayed names to data property names
-      const bodyTypeMap: Record<string, string> = {
-        "SUV": "SUV",
-        "Pickup Truck": "Pickup",
-        "Hatchback": "Hatchback", 
-        "Sedan": "Sedan",
-        "Trucks/Buses": "Bus",
-        "Minibus/Van": "Minibus"
-      };
-      
-      results = results.filter(vehicle => {
-        // This is a mock implementation. In a real app, vehicles would have a bodyType property
-        const vehicleTitle = vehicle.title.toLowerCase();
-        const mappedType = bodyTypeMap[bodyType]?.toLowerCase() || bodyType.toLowerCase();
-        
-        return (
-          vehicleTitle.includes(mappedType) || 
-          (mappedType === "suv" && vehicleTitle.includes("crossover")) ||
-          (mappedType === "pickup" && vehicleTitle.includes("truck"))
-        );
-      });
+      results = results.filter(vehicle => 
+        vehicle.body_type.toLowerCase() === bodyType.toLowerCase()
+      );
     }
     
-    // Filter by make
+    // Filter by make (search in title)
     if (make) {
       results = results.filter(vehicle => 
         vehicle.title.toLowerCase().includes(make.toLowerCase())
@@ -77,19 +93,19 @@ const BuyCar = () => {
     // Filter by fuel type
     if (fuelTypes.length > 0) {
       results = results.filter(vehicle => 
-        fuelTypes.some(type => vehicle.fuelType.toLowerCase().includes(type.toLowerCase()))
+        fuelTypes.some(type => vehicle.fuel_type.toLowerCase() === type.toLowerCase())
       );
     }
     
     // Filter by transmission
     if (transmissions.length > 0) {
       results = results.filter(vehicle => 
-        transmissions.some(trans => vehicle.transmission.toLowerCase().includes(trans.toLowerCase()))
+        transmissions.some(trans => vehicle.transmission.toLowerCase() === trans.toLowerCase())
       );
     }
     
-    setFilteredVehicles(results);
-  }, [bodyType, make, minPrice, maxPrice, fuelTypes, transmissions]);
+    return results;
+  }, [allVehicles, bodyType, make, minPrice, maxPrice, fuelTypes, transmissions]);
 
   // Handle fuel type toggle
   const handleFuelTypeChange = (value: string[]) => {
@@ -110,6 +126,40 @@ const BuyCar = () => {
     setFuelTypes([]);
     setTransmissions([]);
   };
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="container-custom py-16">
+          <div className="flex justify-center items-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary mr-2" />
+            <span>Loading vehicles...</span>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <Layout>
+        <div className="container-custom py-16">
+          <div className="flex flex-col items-center justify-center py-12 text-red-500">
+            <p>Failed to load vehicles. Please try again later.</p>
+            <Button 
+              variant="outline" 
+              onClick={() => window.location.reload()} 
+              className="mt-4"
+            >
+              Refresh
+            </Button>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -147,7 +197,7 @@ const BuyCar = () => {
               </CollapsibleTrigger>
               <CollapsibleContent>
                 <div className="space-y-2 mt-2">
-                  {["SUV", "Pickup Truck", "Sedan", "Hatchback", "Trucks/Buses", "Minibus/Van"].map((type) => (
+                  {["SUV", "Truck", "Sedan", "Hatchback", "Coupe", "Van"].map((type) => (
                     <div key={type} className="flex items-center space-x-2">
                       <Checkbox 
                         id={`type-${type}`} 
@@ -247,7 +297,7 @@ const BuyCar = () => {
                     value={transmissions}
                     onValueChange={handleTransmissionChange}
                   >
-                    {["Automatic", "Manual", "PDK"].map((type) => (
+                    {["Automatic", "Manual", "PDK", "CVT"].map((type) => (
                       <ToggleGroupItem key={type} value={type} className="text-xs">
                         {type}
                       </ToggleGroupItem>
@@ -298,7 +348,7 @@ const BuyCar = () => {
                   >
                     <div className="relative h-52 overflow-hidden">
                       <img 
-                        src={vehicle.image} 
+                        src={vehicle.image || '/placeholder.svg'} 
                         alt={vehicle.title} 
                         className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                       />
@@ -324,7 +374,7 @@ const BuyCar = () => {
                         </div>
                         <div className="flex items-center text-sm text-gray-600">
                           <Fuel size={16} className="mr-2" />
-                          <span>{vehicle.fuelType}</span>
+                          <span>{vehicle.fuel_type}</span>
                         </div>
                         <div className="flex items-center text-sm text-gray-600">
                           <svg width="16" height="16" className="mr-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
