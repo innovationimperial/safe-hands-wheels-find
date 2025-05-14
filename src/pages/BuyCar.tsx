@@ -1,11 +1,12 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import VehicleFilters from "@/components/vehicle-listings/VehicleFilters";
 import VehicleList from "@/components/vehicle-listings/VehicleList";
 import { LoadingState, ErrorState } from "@/components/vehicle-listings/VehicleListingStates";
 import { useVehicleListings } from "@/hooks/use-vehicle-listings";
+import { toast } from "@/hooks/use-toast";
 
 const BuyCar = () => {
   const location = useLocation();
@@ -34,6 +35,15 @@ const BuyCar = () => {
     handleTransmissionChange,
     clearFilters
   } = useVehicleListings(initialBodyType, initialMake);
+
+  useEffect(() => {
+    if (!isLoading && !error && filteredVehicles.length > 0) {
+      toast({
+        title: "Vehicles loaded",
+        description: `Found ${filteredVehicles.length} vehicles from the database`,
+      });
+    }
+  }, [isLoading, error, filteredVehicles.length]);
 
   if (isLoading) {
     return (
