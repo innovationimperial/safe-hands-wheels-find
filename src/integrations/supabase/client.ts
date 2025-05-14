@@ -15,7 +15,7 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
 
 export const uploadVehicleImage = async (file: File, userId: string): Promise<string | null> => {
   try {
-    console.log(`Uploading image: ${file.name}, size: ${(file.size / 1024).toFixed(2)}KB`);
+    console.log(`Uploading image: ${file.name}, size: ${(file.size / 1024).toFixed(2)}KB, userId: ${userId}`);
     
     // Generate a unique file name to avoid collisions
     const fileExt = file.name.split('.').pop();
@@ -28,13 +28,21 @@ export const uploadVehicleImage = async (file: File, userId: string): Promise<st
       throw new Error('File size exceeds 5MB limit');
     }
     
-    // Create the bucket if it doesn't exist yet
-    const { data: buckets } = await supabase.storage.listBuckets();
+    // First check if the bucket exists
+    const { data: buckets, error: listError } = await supabase.storage.listBuckets();
+    console.log('Available buckets:', buckets);
+    
+    if (listError) {
+      console.error('Error listing buckets:', listError);
+      return null;
+    }
+    
+    // Create bucket if it doesn't exist
     const vehicleImagesBucket = buckets?.find(b => b.name === 'vehicle-images');
     
     if (!vehicleImagesBucket) {
       console.log("Creating 'vehicle-images' bucket");
-      const { error: bucketError } = await supabase.storage.createBucket('vehicle-images', {
+      const { data: newBucket, error: bucketError } = await supabase.storage.createBucket('vehicle-images', {
         public: true,
         fileSizeLimit: 5242880, // 5MB in bytes
       });
@@ -43,6 +51,8 @@ export const uploadVehicleImage = async (file: File, userId: string): Promise<st
         console.error('Error creating bucket:', bucketError);
         return null;
       }
+      
+      console.log('Successfully created bucket:', newBucket);
     }
     
     // Upload the file to Supabase Storage
@@ -50,7 +60,7 @@ export const uploadVehicleImage = async (file: File, userId: string): Promise<st
       .from('vehicle-images')
       .upload(filePath, file, {
         cacheControl: '3600',
-        upsert: false
+        upsert: true // Changed to true to overwrite existing files with same name
       });
       
     if (uploadError) {
@@ -77,7 +87,12 @@ export const uploadVehicleImage = async (file: File, userId: string): Promise<st
 // Function to save multiple vehicle images to the vehicle_images table
 export const saveVehicleImages = async (vehicleId: string, imageUrls: string[]): Promise<boolean> => {
   try {
-    console.log(`Saving ${imageUrls.length} images for vehicle ${vehicleId}`);
+    console.log(`Saving ${imageUrls.length} images for vehicle ${vehicleId}:`, imageUrls);
+    
+    if (!vehicleId || !imageUrls.length) {
+      console.error('Missing vehicleId or imageUrls');
+      return false;
+    }
     
     // First, delete any existing images for this vehicle
     console.log(`Removing existing images for vehicle ${vehicleId}`);
@@ -100,16 +115,17 @@ export const saveVehicleImages = async (vehicleId: string, imageUrls: string[]):
     console.log(`Inserting ${imagesToInsert.length} new image records`);
     
     // Insert all images
-    const { error } = await supabase
+    const { error, data } = await supabase
       .from('vehicle_images')
-      .insert(imagesToInsert);
+      .insert(imagesToInsert)
+      .select();
     
     if (error) {
       console.error('Error saving vehicle images:', error);
       return false;
     }
     
-    console.log(`Successfully saved ${imagesToInsert.length} images`);
+    console.log(`Successfully saved ${data?.length} images:`, data);
     return true;
   } catch (error) {
     console.error('Error in saveVehicleImages:', error);
@@ -121,6 +137,11 @@ export const saveVehicleImages = async (vehicleId: string, imageUrls: string[]):
 export const getVehicleImages = async (vehicleId: string): Promise<string[]> => {
   try {
     console.log(`Fetching images for vehicle ${vehicleId}`);
+    
+    if (!vehicleId) {
+      console.error('No vehicleId provided');
+      return [];
+    }
     
     const { data, error } = await supabase
       .from('vehicle_images')
