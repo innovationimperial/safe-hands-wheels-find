@@ -35,7 +35,12 @@ const VehicleImageGallery = ({ images, title }: VehicleImageGalleryProps) => {
   return (
     <div className="mb-6 space-y-4">
       {/* Main carousel with large images */}
-      <Carousel className="w-full" onSelect={(index) => setCurrentImageIndex(index)}>
+      <Carousel 
+        className="w-full" 
+        onSelect={(index) => {
+          setCurrentImageIndex(index);
+        }}
+      >
         <CarouselContent>
           {validImages.map((image, index) => (
             <CarouselItem key={index}>
