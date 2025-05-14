@@ -15,6 +15,8 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
 
 export const uploadVehicleImage = async (file: File, userId: string): Promise<string | null> => {
   try {
+    console.log(`Uploading image: ${file.name}, size: ${(file.size / 1024).toFixed(2)}KB`);
+    
     // Generate a unique file name to avoid collisions
     const fileExt = file.name.split('.').pop();
     const fileName = `${userId}-${Math.random().toString(36).substring(2, 15)}-${Date.now()}.${fileExt}`;
@@ -24,6 +26,23 @@ export const uploadVehicleImage = async (file: File, userId: string): Promise<st
     if (file.size > 5 * 1024 * 1024) {
       console.error('File too large:', file.size);
       throw new Error('File size exceeds 5MB limit');
+    }
+    
+    // Create the bucket if it doesn't exist yet
+    const { data: buckets } = await supabase.storage.listBuckets();
+    const vehicleImagesBucket = buckets?.find(b => b.name === 'vehicle-images');
+    
+    if (!vehicleImagesBucket) {
+      console.log("Creating 'vehicle-images' bucket");
+      const { error: bucketError } = await supabase.storage.createBucket('vehicle-images', {
+        public: true,
+        fileSizeLimit: 5242880, // 5MB in bytes
+      });
+      
+      if (bucketError) {
+        console.error('Error creating bucket:', bucketError);
+        return null;
+      }
     }
     
     // Upload the file to Supabase Storage
@@ -39,11 +58,15 @@ export const uploadVehicleImage = async (file: File, userId: string): Promise<st
       return null;
     }
     
+    console.log('File uploaded successfully:', data?.path);
+    
     // Get the public URL for the uploaded file
     const { data: { publicUrl } } = supabase.storage
       .from('vehicle-images')
       .getPublicUrl(filePath);
       
+    console.log('Generated public URL:', publicUrl);
+    
     return publicUrl;
   } catch (error) {
     console.error('Error in uploadVehicleImage:', error);
@@ -54,11 +77,27 @@ export const uploadVehicleImage = async (file: File, userId: string): Promise<st
 // Function to save multiple vehicle images to the vehicle_images table
 export const saveVehicleImages = async (vehicleId: string, imageUrls: string[]): Promise<boolean> => {
   try {
+    console.log(`Saving ${imageUrls.length} images for vehicle ${vehicleId}`);
+    
+    // First, delete any existing images for this vehicle
+    console.log(`Removing existing images for vehicle ${vehicleId}`);
+    const { error: deleteError } = await supabase
+      .from('vehicle_images')
+      .delete()
+      .eq('vehicle_id', vehicleId);
+    
+    if (deleteError) {
+      console.error('Error deleting existing vehicle images:', deleteError);
+      return false;
+    }
+    
     // Create an array of objects to insert
     const imagesToInsert = imageUrls.map(imageUrl => ({
       vehicle_id: vehicleId,
       image_url: imageUrl
     }));
+    
+    console.log(`Inserting ${imagesToInsert.length} new image records`);
     
     // Insert all images
     const { error } = await supabase
@@ -70,6 +109,7 @@ export const saveVehicleImages = async (vehicleId: string, imageUrls: string[]):
       return false;
     }
     
+    console.log(`Successfully saved ${imagesToInsert.length} images`);
     return true;
   } catch (error) {
     console.error('Error in saveVehicleImages:', error);
@@ -80,17 +120,27 @@ export const saveVehicleImages = async (vehicleId: string, imageUrls: string[]):
 // Function to get all images for a vehicle
 export const getVehicleImages = async (vehicleId: string): Promise<string[]> => {
   try {
+    console.log(`Fetching images for vehicle ${vehicleId}`);
+    
     const { data, error } = await supabase
       .from('vehicle_images')
       .select('image_url')
       .eq('vehicle_id', vehicleId);
       
-    if (error || !data) {
+    if (error) {
       console.error('Error fetching vehicle images:', error);
       return [];
     }
     
-    return data.map(item => item.image_url);
+    if (!data || data.length === 0) {
+      console.log(`No images found for vehicle ${vehicleId}`);
+      return [];
+    }
+    
+    const images = data.map(item => item.image_url);
+    console.log(`Found ${images.length} images for vehicle ${vehicleId}:`, images);
+    
+    return images;
   } catch (error) {
     console.error('Error in getVehicleImages:', error);
     return [];

@@ -1,7 +1,7 @@
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { X, Upload, Loader2, ImageIcon } from 'lucide-react';
+import { X, Upload, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
 import { uploadVehicleImage } from '@/integrations/supabase/client';
@@ -20,7 +20,18 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
   maxImages = 5
 }) => {
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadedImages, setUploadedImages] = useState<string[]>(existingImages);
+  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  
+  // Initialize uploadedImages from existingImages when component mounts
+  // or when existingImages changes
+  useEffect(() => {
+    console.log("MultipleImageUploader: Received existing images:", existingImages);
+    if (existingImages && existingImages.length > 0) {
+      const validImages = existingImages.filter(url => url && url.trim() !== "");
+      console.log("MultipleImageUploader: Setting valid existing images:", validImages);
+      setUploadedImages(validImages);
+    }
+  }, [existingImages]);
   
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     if (!userId) {
@@ -103,13 +114,17 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           {uploadedImages.map((imgUrl, index) => (
             <div 
-              key={imgUrl + index} 
+              key={`${imgUrl}-${index}`} 
               className="relative aspect-square rounded-md overflow-hidden border border-gray-200 group"
             >
               <img 
                 src={imgUrl} 
                 alt={`Vehicle image ${index + 1}`}
                 className="w-full h-full object-cover"
+                onError={(e) => {
+                  console.error(`Failed to load image: ${imgUrl}`);
+                  (e.target as HTMLImageElement).src = '/placeholder.svg';
+                }}
               />
               <Button
                 type="button"

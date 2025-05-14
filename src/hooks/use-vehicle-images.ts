@@ -10,14 +10,24 @@ export function useVehicleImages(vehicleId?: string) {
   
   // Load images for an existing vehicle
   useEffect(() => {
-    if (!vehicleId) return;
+    if (!vehicleId) {
+      console.log("No vehicleId provided, skipping image fetch");
+      return;
+    }
     
     const loadImages = async () => {
       setIsLoading(true);
+      setError(null);
       try {
+        console.log(`Fetching images for vehicle ${vehicleId}`);
         const vehicleImages = await getVehicleImages(vehicleId);
         console.log(`Loaded ${vehicleImages.length} images for vehicle ${vehicleId}:`, vehicleImages);
-        setImages(vehicleImages);
+        
+        // Filter out any empty image URLs before setting state
+        const validImages = vehicleImages.filter(url => url && url.trim() !== "");
+        console.log(`After filtering: ${validImages.length} valid images`);
+        
+        setImages(validImages);
       } catch (err) {
         console.error('Failed to load vehicle images:', err);
         setError('Failed to load vehicle images');
@@ -36,15 +46,27 @@ export function useVehicleImages(vehicleId?: string) {
   
   // Save images for a vehicle
   const saveImages = async (newVehicleId: string): Promise<boolean> => {
-    if (images.length === 0) return true;
+    if (!newVehicleId) {
+      console.error("No vehicle ID provided for saving images");
+      return false;
+    }
+    
+    if (images.length === 0) {
+      console.warn("No images to save for vehicle", newVehicleId);
+      return true; // Nothing to save is still a success
+    }
     
     console.log(`Saving ${images.length} images for vehicle ${newVehicleId}:`, images);
     
     try {
       // Make sure to clean any empty image URLs before saving
       const validImages = images.filter(url => url && url.trim() !== "");
+      console.log(`After filtering: Saving ${validImages.length} valid images`);
       
-      if (validImages.length === 0) return true;
+      if (validImages.length === 0) {
+        console.warn("No valid images to save after filtering");
+        return true;
+      }
       
       const success = await saveVehicleImages(newVehicleId, validImages);
       

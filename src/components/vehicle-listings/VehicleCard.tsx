@@ -19,6 +19,10 @@ const VehicleCard: React.FC<VehicleCardProps> = ({ vehicle }) => {
           src={vehicle.image || '/placeholder.svg'} 
           alt={vehicle.title} 
           className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+          onError={(e) => {
+            console.error(`Failed to load vehicle image: ${vehicle.image}`);
+            (e.target as HTMLImageElement).src = '/placeholder.svg';
+          }}
         />
         {vehicle.featured && (
           <Badge className="absolute top-3 right-3 bg-primary">

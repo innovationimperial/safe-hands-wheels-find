@@ -23,7 +23,7 @@ const VehicleImageGallery = ({ images, title }: VehicleImageGalleryProps) => {
   
   // Log image list for debugging
   useEffect(() => {
-    console.log(`VehicleImageGallery: Received ${images.length} images, ${validImages.length} are valid`);
+    console.log(`VehicleImageGallery: Received ${images.length} images, ${validImages.length} are valid:`, validImages);
     if (validImages.length === 0) {
       console.warn('No valid images found for vehicle');
     }
@@ -56,7 +56,7 @@ const VehicleImageGallery = ({ images, title }: VehicleImageGalleryProps) => {
       >
         <CarouselContent>
           {validImages.map((image, index) => (
-            <CarouselItem key={index}>
+            <CarouselItem key={`main-${index}-${image}`}>
               <AspectRatio ratio={16 / 9} className="bg-gray-100 rounded-lg overflow-hidden">
                 <img 
                   src={image} 
@@ -80,7 +80,7 @@ const VehicleImageGallery = ({ images, title }: VehicleImageGalleryProps) => {
         <div className="flex overflow-x-auto gap-2 pb-2">
           {validImages.map((image, index) => (
             <div 
-              key={index}
+              key={`thumb-${index}-${image}`}
               onClick={() => setCurrentImageIndex(index)} 
               className={cn(
                 "cursor-pointer rounded-md overflow-hidden flex-shrink-0 border-2 transition-all",
@@ -95,6 +95,7 @@ const VehicleImageGallery = ({ images, title }: VehicleImageGalleryProps) => {
                 alt={`${title} thumbnail ${index + 1}`}
                 className="w-full h-full object-cover"
                 onError={(e) => {
+                  console.error(`Failed to load thumbnail: ${image}`);
                   (e.target as HTMLImageElement).src = '/placeholder.svg';
                 }}
               />

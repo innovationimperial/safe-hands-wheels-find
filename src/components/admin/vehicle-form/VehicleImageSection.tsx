@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import MultipleImageUploader from '@/components/admin/MultipleImageUploader';
 
 interface VehicleImageSectionProps {
@@ -13,6 +13,11 @@ const VehicleImageSection: React.FC<VehicleImageSectionProps> = ({
   images, 
   updateImages 
 }) => {
+  // Log received images for debugging
+  useEffect(() => {
+    console.log("VehicleImageSection: Received images:", images);
+  }, [images]);
+
   return (
     <div className="space-y-2">
       <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
