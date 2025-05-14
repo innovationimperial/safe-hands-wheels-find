@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Carousel,
   CarouselContent,
@@ -20,6 +20,14 @@ const VehicleImageGallery = ({ images, title }: VehicleImageGalleryProps) => {
   
   // Filter out any empty or invalid image URLs
   const validImages = images.filter(img => img && img.trim() !== "");
+  
+  // Log image list for debugging
+  useEffect(() => {
+    console.log(`VehicleImageGallery: Received ${images.length} images, ${validImages.length} are valid`);
+    if (validImages.length === 0) {
+      console.warn('No valid images found for vehicle');
+    }
+  }, [images, validImages.length]);
   
   // If no valid images are available, display a placeholder
   if (validImages.length === 0) {

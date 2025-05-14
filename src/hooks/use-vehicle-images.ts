@@ -16,6 +16,7 @@ export function useVehicleImages(vehicleId?: string) {
       setIsLoading(true);
       try {
         const vehicleImages = await getVehicleImages(vehicleId);
+        console.log(`Loaded ${vehicleImages.length} images for vehicle ${vehicleId}:`, vehicleImages);
         setImages(vehicleImages);
       } catch (err) {
         console.error('Failed to load vehicle images:', err);
@@ -37,10 +38,18 @@ export function useVehicleImages(vehicleId?: string) {
   const saveImages = async (newVehicleId: string): Promise<boolean> => {
     if (images.length === 0) return true;
     
+    console.log(`Saving ${images.length} images for vehicle ${newVehicleId}:`, images);
+    
     try {
-      const success = await saveVehicleImages(newVehicleId, images);
+      // Make sure to clean any empty image URLs before saving
+      const validImages = images.filter(url => url && url.trim() !== "");
+      
+      if (validImages.length === 0) return true;
+      
+      const success = await saveVehicleImages(newVehicleId, validImages);
       
       if (!success) {
+        console.error('Failed to save vehicle images to database');
         toast({
           title: "Error",
           description: "Failed to save vehicle images",
@@ -49,6 +58,7 @@ export function useVehicleImages(vehicleId?: string) {
         return false;
       }
       
+      console.log(`Successfully saved ${validImages.length} images for vehicle ${newVehicleId}`);
       return true;
     } catch (err) {
       console.error('Failed to save vehicle images:', err);
@@ -63,7 +73,10 @@ export function useVehicleImages(vehicleId?: string) {
   
   // Update the images list
   const updateImages = (newImages: string[]) => {
-    setImages(newImages);
+    // Filter out any empty strings or undefined values
+    const validImages = newImages.filter(url => url && url.trim() !== "");
+    console.log('Updating images array:', validImages);
+    setImages(validImages);
   };
   
   return {

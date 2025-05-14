@@ -1,7 +1,6 @@
 
 import React, { useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
 import useVehicleDetail from "@/hooks/use-vehicle-detail";
@@ -15,12 +14,14 @@ const VehicleDetail = () => {
   const { id } = useParams<{ id: string }>();
   const { vehicle, allImages, featuresByCategory, isLoading, error } = useVehicleDetail(id);
   
-  // Debugging to help identify image issues
+  // Enhanced debugging to help identify image issues
   useEffect(() => {
     if (vehicle && allImages) {
-      console.log('Vehicle images loaded:', {
+      console.log('Vehicle details loaded:', {
+        id: vehicle.id,
+        title: vehicle.title,
         primaryImage: vehicle.image,
-        additionalImages: allImages.slice(1),
+        additionalImages: vehicle.image ? allImages.slice(1) : allImages,
         totalImages: allImages.length
       });
     }

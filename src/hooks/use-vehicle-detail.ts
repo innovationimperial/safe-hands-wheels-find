@@ -27,6 +27,8 @@ export const useVehicleDetail = (id: string | undefined) => {
       
       if (imagesError) throw imagesError;
       
+      console.log(`Retrieved ${images?.length || 0} additional images from vehicle_images table for vehicle ${id}`);
+      
       // Get vehicle features
       const { data: features, error: featuresError } = await supabase
         .from('vehicle_features')
@@ -65,14 +67,31 @@ export const useVehicleDetail = (id: string | undefined) => {
     const mainImage = vehicleData.vehicle.image;
     const additionalImages = vehicleData.images.map(img => img.image_url).filter(Boolean);
     
-    // Start with main image if it exists and is not empty
-    const images = [];
+    console.log('Processing vehicle images:', {
+      mainImage,
+      additionalImagesCount: additionalImages.length,
+      additionalImages
+    });
+    
+    // Create a combined array of images, ensuring no duplicates and no empty strings
+    const uniqueImages = new Set<string>();
+    
+    // Add main image if it exists and is not empty
     if (mainImage && mainImage.trim() !== '') {
-      images.push(mainImage);
+      uniqueImages.add(mainImage);
     }
     
-    // Add the additional images
-    return [...images, ...additionalImages];
+    // Add additional images
+    additionalImages.forEach(img => {
+      if (img && img.trim() !== '') {
+        uniqueImages.add(img);
+      }
+    });
+    
+    const allUniqueImages = Array.from(uniqueImages);
+    console.log(`Final image list contains ${allUniqueImages.length} unique images`);
+    
+    return allUniqueImages;
   }, [vehicleData]);
   
   return {
