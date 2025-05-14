@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,17 @@ import VehicleDetailError from "@/components/vehicle-detail/VehicleDetailError";
 const VehicleDetail = () => {
   const { id } = useParams<{ id: string }>();
   const { vehicle, allImages, featuresByCategory, isLoading, error } = useVehicleDetail(id);
+  
+  // Debugging to help identify image issues
+  useEffect(() => {
+    if (vehicle && allImages) {
+      console.log('Vehicle images loaded:', {
+        primaryImage: vehicle.image,
+        additionalImages: allImages.slice(1),
+        totalImages: allImages.length
+      });
+    }
+  }, [vehicle, allImages]);
   
   // Loading state
   if (isLoading) {

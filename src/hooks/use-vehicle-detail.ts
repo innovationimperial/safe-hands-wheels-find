@@ -57,10 +57,22 @@ export const useVehicleDetail = (id: string | undefined) => {
     }, {});
   }, [vehicleData?.features]);
 
-  // All images including the primary one
+  // All images including the primary one, filter out any empty strings
   const allImages = useMemo(() => {
     if (!vehicleData?.vehicle) return [];
-    return [vehicleData.vehicle.image, ...vehicleData.images.map(img => img.image_url)];
+    
+    // Make a complete array of all images, starting with the main image if it exists
+    const mainImage = vehicleData.vehicle.image;
+    const additionalImages = vehicleData.images.map(img => img.image_url).filter(Boolean);
+    
+    // Start with main image if it exists and is not empty
+    const images = [];
+    if (mainImage && mainImage.trim() !== '') {
+      images.push(mainImage);
+    }
+    
+    // Add the additional images
+    return [...images, ...additionalImages];
   }, [vehicleData]);
   
   return {
