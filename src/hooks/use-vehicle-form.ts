@@ -16,12 +16,14 @@ export function useVehicleForm(vehicleId?: string) {
   // Create or update vehicle mutation
   const mutation = useMutation({
     mutationFn: async (values: VehicleFormValues) => {
-      const user = supabase.auth.getUser();
-      const userResponse = await user;
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
       
-      if (!userResponse.data.user) {
+      if (authError || !user) {
+        console.error("Authentication error:", authError);
         throw new Error("User not authenticated");
       }
+      
+      console.log("Current authenticated user:", user.id);
       
       // Map form values to database values
       const mappedFuelType = mapFuelTypeToDatabase(values.fuel_type);
@@ -45,10 +47,12 @@ export function useVehicleForm(vehicleId?: string) {
         location: values.location,
         fuel_type: mappedFuelType,
         status: dbStatus,
-        user_id: userResponse.data.user.id,
+        user_id: user.id,
         image: images.length > 0 ? images[0] : "", // Set first image as the main image
         featured: values.featured
       };
+
+      console.log("Submitting vehicle data:", vehicleData);
 
       if (vehicleId) {
         // Update existing vehicle
@@ -59,7 +63,10 @@ export function useVehicleForm(vehicleId?: string) {
           .select()
           .single();
 
-        if (error) throw error;
+        if (error) {
+          console.error("Error updating vehicle:", error);
+          throw error;
+        }
         await saveImages(vehicleId);
         return data;
       } else {
@@ -70,8 +77,14 @@ export function useVehicleForm(vehicleId?: string) {
           .select()
           .single();
 
-        if (error) throw error;
-        await saveImages(data.id);
+        if (error) {
+          console.error("Error creating vehicle:", error);
+          throw error;
+        }
+        
+        if (data) {
+          await saveImages(data.id);
+        }
         return data;
       }
     },
