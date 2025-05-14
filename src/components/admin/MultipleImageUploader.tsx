@@ -35,7 +35,6 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
   
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     if (!userId) {
-      console.error("No user ID provided for upload");
       toast({
         title: "Authentication required",
         description: "You must be logged in to upload images.",
@@ -44,14 +43,10 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
       return;
     }
     
-    if (acceptedFiles.length === 0) {
-      console.log("No files were accepted for upload");
-      return;
-    }
+    if (acceptedFiles.length === 0) return;
     
     // Check if adding these files would exceed the max limit
     if (uploadedImages.length + acceptedFiles.length > maxImages) {
-      console.log(`Upload would exceed max images (${maxImages})`);
       toast({
         title: "Too many images",
         description: `You can only upload a maximum of ${maxImages} images.`,
@@ -61,44 +56,26 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
     }
     
     setIsUploading(true);
-    console.log(`Starting upload of ${acceptedFiles.length} files for user ${userId}`);
     
     try {
-      // Upload files one by one and track success
-      const newImageUrls: string[] = [];
+      const uploadPromises = acceptedFiles.map(file => uploadVehicleImage(file, userId));
+      const results = await Promise.all(uploadPromises);
       
-      for (const file of acceptedFiles) {
-        console.log(`Processing file: ${file.name}`);
-        const imageUrl = await uploadVehicleImage(file, userId);
-        
-        if (imageUrl) {
-          console.log(`Successfully uploaded: ${file.name} -> ${imageUrl}`);
-          newImageUrls.push(imageUrl);
-        } else {
-          console.error(`Failed to upload: ${file.name}`);
-          toast({
-            title: "Upload failed",
-            description: `Failed to upload ${file.name}`,
-            variant: "destructive"
-          });
-        }
-      }
+      const successfulUploads = results.filter(Boolean) as string[];
       
-      if (newImageUrls.length > 0) {
-        const allImages = [...uploadedImages, ...newImageUrls];
-        console.log(`Setting ${allImages.length} images:`, allImages);
-        setUploadedImages(allImages);
-        onImagesUploaded(allImages);
+      if (successfulUploads.length > 0) {
+        const newImages = [...uploadedImages, ...successfulUploads];
+        setUploadedImages(newImages);
+        onImagesUploaded(newImages);
         
         toast({
           title: "Images uploaded",
-          description: `Successfully uploaded ${newImageUrls.length} image(s).`
+          description: `Successfully uploaded ${successfulUploads.length} image(s).`
         });
       } else {
-        console.error("No images were successfully uploaded");
         toast({
           title: "Upload failed",
-          description: "Failed to upload any images. Please try again.",
+          description: "Failed to upload images. Please try again.",
           variant: "destructive"
         });
       }
