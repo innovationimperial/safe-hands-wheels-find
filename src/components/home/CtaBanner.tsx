@@ -1,5 +1,6 @@
 
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 const CtaBanner = () => {
   return (
@@ -21,11 +22,19 @@ const CtaBanner = () => {
             Start your search today and drive home your dream car tomorrow.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Button className="bg-primary hover:bg-primary/90 text-lg py-6 px-8">
-              Browse Vehicles
+            <Button className="bg-primary hover:bg-primary/90 text-lg py-6 px-8" asChild>
+              <Link to="/buy-car">
+                Browse Vehicles
+              </Link>
             </Button>
-            <Button variant="outline" className="bg-transparent border-white text-white hover:bg-white/20 text-lg py-6 px-8">
-              Sell Your Car
+            <Button 
+              variant="outline" 
+              className="bg-transparent border-white text-white hover:bg-white/20 text-lg py-6 px-8"
+              asChild
+            >
+              <Link to="/sell-car">
+                Sell Your Car
+              </Link>
             </Button>
           </div>
         </div>
