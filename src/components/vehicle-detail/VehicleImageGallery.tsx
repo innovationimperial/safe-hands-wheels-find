@@ -37,8 +37,13 @@ const VehicleImageGallery = ({ images, title }: VehicleImageGalleryProps) => {
       {/* Main carousel with large images */}
       <Carousel 
         className="w-full" 
+        opts={{
+          startIndex: currentImageIndex,
+        }}
         onSelect={(index) => {
-          setCurrentImageIndex(index);
+          if (typeof index === 'number') {
+            setCurrentImageIndex(index);
+          }
         }}
       >
         <CarouselContent>
