@@ -59,33 +59,35 @@ const AdminVehicleForm = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: (data) => {
-      if (data) {
-        // Map status from database (Reserved) to form values (Pending)
-        let mappedStatus = data.status;
-        if (mappedStatus === "Reserved") {
-          mappedStatus = "Pending";
+    meta: {
+      onSuccess: (data: any) => {
+        if (data) {
+          // Map status from database (Reserved) to form values (Pending)
+          let mappedStatus = data.status;
+          if (mappedStatus === "Reserved") {
+            mappedStatus = "Pending";
+          }
+          
+          // Map fuel_type from database to form values
+          const mappedFuelType = mapFuelTypeFromDatabase(data.fuel_type);
+          
+          // Reset form with fetched data
+          form.reset({
+            title: data.title,
+            year: data.year,
+            price: data.price,
+            mileage: data.mileage,
+            color: data.color,
+            body_type: data.body_type,
+            transmission: data.transmission,
+            fuel_type: mappedFuelType,
+            engine_capacity: data.engine_capacity,
+            doors: data.doors,
+            location: data.location,
+            status: mappedStatus,
+            featured: data.featured,
+          });
         }
-        
-        // Map fuel_type from database to form values
-        const mappedFuelType = mapFuelTypeFromDatabase(data.fuel_type);
-        
-        // Reset form with fetched data
-        form.reset({
-          title: data.title,
-          year: data.year,
-          price: data.price,
-          mileage: data.mileage,
-          color: data.color,
-          body_type: data.body_type,
-          transmission: data.transmission,
-          fuel_type: mappedFuelType,
-          engine_capacity: data.engine_capacity,
-          doors: data.doors,
-          location: data.location,
-          status: mappedStatus,
-          featured: data.featured,
-        });
       }
     }
   });
