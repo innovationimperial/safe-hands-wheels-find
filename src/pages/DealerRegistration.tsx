@@ -84,15 +84,23 @@ const DealerRegistration = () => {
     setIsSubmitting(true);
 
     try {
-      // First update user's role in profiles table using upsert to handle both new and existing profiles
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .update({ 
-          role: "dealer" 
-        })
-        .eq("id", user.id);
+      // First update user's role in profiles table using RPC function
+      const { error: profileError } = await supabase.rpc('set_user_role', { 
+        user_id: user.id, 
+        new_role: 'dealer' 
+      });
 
-      if (profileError) throw profileError;
+      if (profileError) {
+        // If RPC function failed, try direct update (fallback)
+        const { error: updateError } = await supabase
+          .from("profiles")
+          .update({ 
+            role: "dealer" 
+          })
+          .eq("id", user.id);
+          
+        if (updateError) throw updateError;
+      }
 
       // Then register dealer information
       const { error: dealerError } = await supabase.from("dealers").insert({
