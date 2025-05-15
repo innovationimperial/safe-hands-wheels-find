@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import AdminLayout from "@/components/layout/AdminLayout";
 import { 
@@ -31,7 +30,7 @@ import {
   AlertCircle,
   Loader2
 } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
@@ -60,23 +59,33 @@ interface Vehicle {
   featured: boolean;
   image: string;
   status: 'Available' | 'Sold' | 'Reserved';
+  user_id: string;
 }
 
 const AdminVehicles = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
-  const { session } = useAuth();
+  const { session, isAdmin, user } = useAuth();
   const [deleteVehicleId, setDeleteVehicleId] = useState<string | null>(null);
+  
+  // Determine if we're in dealer mode vs admin mode
+  const isDealerMode = location.pathname.startsWith('/dealer');
   
   // Fetch vehicles from Supabase
   const { data: vehicles, isLoading, error } = useQuery({
-    queryKey: ['vehicles'],
+    queryKey: ['vehicles', isDealerMode, user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('vehicles')
-        .select('*')
-        .order('created_at', { ascending: false });
+      // For dealers, only get their vehicles
+      // For admins, get all vehicles
+      let query = supabase.from('vehicles').select('*');
+      
+      if (isDealerMode && user) {
+        query = query.eq('user_id', user.id);
+      }
+      
+      const { data, error } = await query.order('created_at', { ascending: false });
       
       if (error) {
         throw error;
@@ -166,8 +175,165 @@ const AdminVehicles = () => {
     }
   };
 
-  return (
-    <AdminLayout>
+  // For dealer mode, we use a different UI
+  const renderPageContent = () => {
+    if (isDealerMode) {
+      return (
+        <div className="mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
+            <h1 className="text-2xl font-bold">My Vehicle Listings</h1>
+            <div className="flex gap-4">
+              <Link to="/dealer/add-vehicle">
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Vehicle
+                </Button>
+              </Link>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-md border shadow-sm">
+            <div className="p-4 border-b">
+              <div className="flex flex-col sm:flex-row gap-4 justify-between">
+                <div className="w-full sm:max-w-xs">
+                  <Input
+                    placeholder="Search vehicles..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="max-w-sm"
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <div className="overflow-x-auto">
+              {isLoading ? (
+                <div className="py-8 text-center flex flex-col items-center gap-2">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <p>Loading vehicles...</p>
+                </div>
+              ) : error ? (
+                <div className="py-8 text-center flex flex-col items-center gap-2 text-red-500">
+                  <AlertCircle className="h-8 w-8" />
+                  <p>Failed to load vehicles. Please try again.</p>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => queryClient.invalidateQueries({ queryKey: ['vehicles'] })}
+                    className="mt-2"
+                  >
+                    Retry
+                  </Button>
+                </div>
+              ) : filteredVehicles.length === 0 ? (
+                <div className="py-8 text-center">
+                  <p className="text-gray-500">No vehicles found.</p>
+                  <Button 
+                    variant="link" 
+                    onClick={() => navigate("/dealer/add-vehicle")}
+                    className="mt-2"
+                  >
+                    Add your first vehicle
+                  </Button>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[80px]">Image</TableHead>
+                      <TableHead>Vehicle</TableHead>
+                      <TableHead>Price</TableHead>
+                      <TableHead>Year</TableHead>
+                      <TableHead>Mileage</TableHead>
+                      <TableHead>Fuel</TableHead>
+                      <TableHead>Location</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredVehicles.map((vehicle) => (
+                      <TableRow key={vehicle.id}>
+                        <TableCell>
+                          <div className="w-12 h-10 bg-gray-100 rounded overflow-hidden">
+                            <img 
+                              src={vehicle.image} 
+                              alt={vehicle.title} 
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          <div>
+                            <div className="font-medium">{vehicle.title}</div>
+                            <div className="text-xs text-gray-500">{vehicle.transmission}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell>${vehicle.price.toLocaleString()}</TableCell>
+                        <TableCell>{vehicle.year}</TableCell>
+                        <TableCell>{vehicle.mileage}</TableCell>
+                        <TableCell>{vehicle.fuel_type}</TableCell>
+                        <TableCell>{vehicle.location}</TableCell>
+                        <TableCell>
+                          {vehicle.featured ? (
+                            <Badge className="bg-amber-500">Featured</Badge>
+                          ) : (
+                            <Badge variant="outline">Standard</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem asChild>
+                                <Link to={`/vehicle/${vehicle.id}`} className="cursor-pointer">
+                                  <Eye className="mr-2 h-4 w-4" />
+                                  <span>View</span>
+                                </Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem asChild>
+                                <Link to={`/dealer/edit-vehicle/${vehicle.id}`} className="cursor-pointer">
+                                  <Pencil className="mr-2 h-4 w-4" />
+                                  <span>Edit</span>
+                                </Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem 
+                                className="text-red-600"
+                                onClick={() => handleDeleteVehicle(vehicle.id)}
+                                disabled={deleteVehicleMutation.isPending}
+                              >
+                                <Trash className="mr-2 h-4 w-4" />
+                                <span>Delete</span>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </div>
+            
+            <div className="p-4 border-t">
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-gray-500">
+                  Showing {filteredVehicles.length} of {vehicles?.length || 0} vehicles
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    
+    // Admin mode
+    return (
       <div className="mb-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
           <h1 className="text-2xl font-bold">Vehicle Management</h1>
@@ -343,6 +509,20 @@ const AdminVehicles = () => {
           </div>
         </div>
       </div>
+    );
+  };
+
+  return (
+    <>
+      {isDealerMode ? (
+        <div className="container py-16 mt-16">
+          {renderPageContent()}
+        </div>
+      ) : (
+        <AdminLayout>
+          {renderPageContent()}
+        </AdminLayout>
+      )}
 
       {/* Confirmation dialog for delete */}
       <AlertDialog 
@@ -370,7 +550,7 @@ const AdminVehicles = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </AdminLayout>
+    </>
   );
 };
 

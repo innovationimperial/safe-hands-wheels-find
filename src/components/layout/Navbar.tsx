@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Menu, X, User, LogOut, UserPlus } from 'lucide-react';
+import { Menu, X, User, LogOut, UserPlus, Store, CarFront } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import LoginModal from '@/components/auth/LoginModal';
 import {
@@ -17,7 +17,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
-  const { user, profile, logout, isAdmin, isLoading } = useAuth();
+  const { user, profile, logout, isAdmin, isDealer, isDealerApproved, isLoading } = useAuth();
   
   const toggleMenu = () => {
     setIsOpen(!isOpen);
@@ -71,6 +71,34 @@ const Navbar = () => {
                   <>
                     <DropdownMenuItem asChild>
                       <Link to="/admin">Admin Dashboard</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
+                {isDealer && isDealerApproved && (
+                  <>
+                    <DropdownMenuItem asChild>
+                      <Link to="/dealer/dashboard">
+                        <CarFront className="mr-2 h-4 w-4" />
+                        <span>Dealer Dashboard</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/dealer/add-vehicle">
+                        <CarFront className="mr-2 h-4 w-4" />
+                        <span>Add Vehicle</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
+                {!isDealer && !isAdmin && (
+                  <>
+                    <DropdownMenuItem asChild>
+                      <Link to="/become-dealer">
+                        <Store className="mr-2 h-4 w-4" />
+                        <span>Become a Dealer</span>
+                      </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                   </>
@@ -177,6 +205,45 @@ const Navbar = () => {
                       Admin Dashboard
                     </Link>
                   )}
+
+                  {isDealer && isDealerApproved && (
+                    <>
+                      <Link 
+                        to="/dealer/dashboard" 
+                        className="block font-medium p-2 mb-2 hover:bg-accent rounded-md transition-colors"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        <div className="flex items-center">
+                          <CarFront className="mr-2 h-4 w-4" />
+                          <span>Dealer Dashboard</span>
+                        </div>
+                      </Link>
+                      <Link 
+                        to="/dealer/add-vehicle" 
+                        className="block font-medium p-2 mb-2 hover:bg-accent rounded-md transition-colors"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        <div className="flex items-center">
+                          <CarFront className="mr-2 h-4 w-4" />
+                          <span>Add Vehicle</span>
+                        </div>
+                      </Link>
+                    </>
+                  )}
+
+                  {!isDealer && !isAdmin && (
+                    <Link 
+                      to="/become-dealer" 
+                      className="block font-medium p-2 mb-2 hover:bg-accent rounded-md transition-colors"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      <div className="flex items-center">
+                        <Store className="mr-2 h-4 w-4" />
+                        <span>Become a Dealer</span>
+                      </div>
+                    </Link>
+                  )}
+
                   <Button 
                     variant="outline" 
                     onClick={() => {

@@ -1,7 +1,7 @@
 
 import React, { createContext, useState, useContext, ReactNode, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Session, User } from "@supabase/supabase-js";
 
@@ -10,11 +10,21 @@ type UserProfile = {
   username: string;
   full_name: string | null;
   avatar_url: string | null;
+  role: string;
+};
+
+type DealerProfile = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  status: 'Pending' | 'Approved' | 'Rejected';
 };
 
 type AuthContextType = {
   user: User | null;
   profile: UserProfile | null;
+  dealerProfile: DealerProfile | null;
   session: Session | null;
   isLoading: boolean;
   signUp: (email: string, password: string, fullName?: string) => Promise<void>;
@@ -22,6 +32,8 @@ type AuthContextType = {
   logout: () => Promise<void>;
   isAuthenticated: boolean;
   isAdmin: boolean;
+  isDealer: boolean;
+  isDealerApproved: boolean;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -29,6 +41,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [dealerProfile, setDealerProfile] = useState<DealerProfile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const navigate = useNavigate();
@@ -48,6 +61,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           }, 0);
         } else if (event === 'SIGNED_OUT') {
           setProfile(null);
+          setDealerProfile(null);
         }
       }
     );
@@ -84,18 +98,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchUserProfile = async (userId: string) => {
     try {
-      const { data, error } = await supabase
+      // Fetch user profile
+      const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
         .maybeSingle();
 
-      if (error) {
-        throw error;
+      if (profileError) {
+        throw profileError;
       }
 
-      if (data) {
-        setProfile(data as UserProfile);
+      if (profileData) {
+        setProfile(profileData as UserProfile);
+        
+        // If user has profile, check if they're a dealer
+        if (profileData.role === 'dealer') {
+          const { data: dealerData, error: dealerError } = await supabase
+            .from('dealers')
+            .select('*')
+            .eq('user_id', userId)
+            .maybeSingle();
+            
+          if (dealerError) {
+            console.error('Error fetching dealer profile:', dealerError);
+          } else if (dealerData) {
+            setDealerProfile(dealerData as DealerProfile);
+          }
+        }
       }
     } catch (error) {
       console.error('Error fetching user profile:', error);
@@ -173,6 +203,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(null);
       setSession(null);
       setProfile(null);
+      setDealerProfile(null);
       
       toast({
         title: "Logged out",
@@ -190,25 +221,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const isAuthenticated = !!user;
-  // For now, let's consider a user an admin if they have a specific email domain
-  // In a real app, you would store this in the database
-  const isAdmin = isAuthenticated && (
-    user?.email?.endsWith('@admin.com') || 
-    user?.email === 'admin@example.com'
-  );
+  const isAdmin = isAuthenticated && profile?.role === 'admin';
+  const isDealer = isAuthenticated && profile?.role === 'dealer';
+  const isDealerApproved = isDealer && dealerProfile?.status === 'Approved';
 
   return (
     <AuthContext.Provider 
       value={{ 
         user, 
         profile, 
+        dealerProfile,
         session, 
         isLoading, 
         signUp, 
         login, 
         logout, 
         isAuthenticated, 
-        isAdmin 
+        isAdmin,
+        isDealer,
+        isDealerApproved
       }}
     >
       {children}
