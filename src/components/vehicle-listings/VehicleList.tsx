@@ -97,7 +97,7 @@ const VehicleList: React.FC<VehicleListProps> = ({ vehicles, isLoading }) => {
                 <TableCell>{vehicle.year}</TableCell>
                 <TableCell>${vehicle.price}</TableCell>
                 <TableCell>
-                  <Badge variant="secondary">{vehicle.status}</Badge>
+                  <Badge variant="secondary">{vehicle.status || "Available"}</Badge>
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">

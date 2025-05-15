@@ -2,21 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useMemo } from "react";
-
-// Define the Vehicle interface
-export interface Vehicle {
-  id: string;
-  title: string;
-  price: number;
-  year: number;
-  mileage: string;
-  fuel_type: string;
-  transmission: string;
-  location: string;
-  featured: boolean;
-  image: string;
-  body_type: string;
-}
+import { Vehicle } from "@/types/vehicle-detail"; // Import the shared Vehicle type
 
 export const useVehicleListings = (initialBodyType: string = "", initialMake: string = "") => {
   // Filter states

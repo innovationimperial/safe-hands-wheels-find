@@ -14,6 +14,7 @@ export interface Vehicle {
   doors: number;
   color: string;
   engine_capacity: string;
+  status?: string;
 }
 
 export interface VehicleImage {
