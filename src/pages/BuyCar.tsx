@@ -89,9 +89,7 @@ const BuyCar = () => {
           {/* Vehicle Listings */}
           <VehicleList
             vehicles={filteredVehicles}
-            bodyType={bodyType}
-            make={make}
-            clearFilters={clearFilters}
+            isLoading={isLoading}
           />
         </div>
       </div>
