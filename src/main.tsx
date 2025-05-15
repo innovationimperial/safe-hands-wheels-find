@@ -4,6 +4,9 @@ import { StrictMode } from 'react'
 import App from './App.tsx'
 import './index.css'
 
+// Add these Tailwind styles to handle sidebar
+import "@/styles/sidebar.css"
+
 const rootElement = document.getElementById("root");
 if (!rootElement) throw new Error('Root element not found');
 

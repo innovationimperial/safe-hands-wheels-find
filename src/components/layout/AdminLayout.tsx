@@ -5,16 +5,24 @@ import {
   Car, 
   LayoutDashboard, 
   Users, 
-  LogOut, 
-  ChevronLeft, 
-  ChevronRight 
+  LogOut
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+  SidebarProvider,
+  SidebarTrigger
+} from "@/components/ui/sidebar";
 
 const AdminLayout = ({ children }: { children: React.ReactNode }) => {
-  const [collapsed, setCollapsed] = React.useState(false);
   const location = useLocation();
   const { logout } = useAuth();
   
@@ -36,90 +44,69 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
     },
   ];
 
+  // Helper function to check if a path is active
+  const isActive = (path: string) => {
+    return location.pathname === path || location.pathname.startsWith(`${path}/`);
+  };
+
   return (
-    <div className="min-h-screen bg-gray-100 flex">
-      {/* Sidebar */}
-      <aside 
-        className={cn(
-          "bg-white border-r border-gray-200 transition-all duration-300",
-          collapsed ? "w-16" : "w-64"
-        )}
-      >
-        <div className="flex flex-col h-full">
-          <div className={cn(
-            "border-b border-gray-200 flex items-center justify-between p-4",
-            collapsed ? "justify-center" : ""
-          )}>
-            {!collapsed && (
+    <SidebarProvider defaultOpen={true}>
+      <div className="flex min-h-screen bg-gray-100 w-full">
+        <Sidebar variant="sidebar">
+          <SidebarHeader className="border-b border-gray-200 py-3">
+            <div className="px-3 flex items-center justify-between">
               <Link to="/admin" className="font-bold text-lg text-primary">
                 SafeHands
               </Link>
-            )}
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={() => setCollapsed(prev => !prev)}
-              className="rounded-full h-8 w-8"
-            >
-              {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-            </Button>
-          </div>
+              <SidebarTrigger />
+            </div>
+          </SidebarHeader>
           
-          <div className="flex-1 py-4">
-            <nav className="px-2 space-y-1">
+          <SidebarContent>
+            <SidebarMenu>
               {navItems.map(item => (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={cn(
-                    "flex items-center py-2 px-3 rounded-md group",
-                    location.pathname === item.path 
-                      ? "bg-primary text-white" 
-                      : "text-gray-700 hover:bg-gray-100",
-                    collapsed ? "justify-center" : ""
-                  )}
-                >
-                  <div className={cn(
-                    "flex items-center",
-                    collapsed ? "justify-center w-full" : ""
-                  )}>
-                    {item.icon}
-                    {!collapsed && <span className="ml-3">{item.label}</span>}
-                  </div>
-                </Link>
+                <SidebarMenuItem key={item.path}>
+                  <SidebarMenuButton 
+                    asChild
+                    isActive={isActive(item.path)}
+                    tooltip={item.label}
+                  >
+                    <Link to={item.path} className="flex items-center">
+                      {item.icon}
+                      <span className="ml-3">{item.label}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
               ))}
-            </nav>
-          </div>
+            </SidebarMenu>
+          </SidebarContent>
           
-          <div className="p-4 border-t border-gray-200">
+          <SidebarFooter>
             <Button 
               variant="ghost" 
-              className={cn(
-                "text-gray-700 w-full justify-start",
-                collapsed ? "justify-center" : ""
-              )}
+              className="w-full justify-start text-gray-700"
               onClick={logout}
             >
-              <LogOut className="w-5 h-5" />
-              {!collapsed && <span className="ml-2">Log Out</span>}
+              <LogOut className="w-5 h-5 mr-2" />
+              <span>Log Out</span>
             </Button>
-          </div>
-        </div>
-      </aside>
+          </SidebarFooter>
+        </Sidebar>
 
-      {/* Main content */}
-      <div className="flex-1 overflow-auto">
-        <header className="bg-white border-b border-gray-200 flex items-center justify-between p-4">
-          <h1 className="text-xl font-semibold">Admin Dashboard</h1>
-          <div className="flex items-center space-x-4">
-            <span className="text-sm text-gray-600">Admin User</span>
-          </div>
-        </header>
-        <main className="p-6">
-          {children}
-        </main>
+        {/* Main content */}
+        <div className="flex-1 overflow-auto">
+          <header className="bg-white border-b border-gray-200 flex items-center justify-between p-4">
+            <h1 className="text-xl font-semibold">Admin Dashboard</h1>
+            <div className="flex items-center space-x-4">
+              <span className="text-sm text-gray-600">Admin User</span>
+            </div>
+          </header>
+          <main className="p-6">
+            {children}
+          </main>
+        </div>
       </div>
-    </div>
+    </SidebarProvider>
   );
 };
 
