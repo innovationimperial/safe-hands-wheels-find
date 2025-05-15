@@ -6,16 +6,18 @@ import { Vehicle } from "@/hooks/use-vehicle-listings";
 
 interface VehicleListProps {
   vehicles: Vehicle[];
-  bodyType: string;
-  make: string;
-  clearFilters: () => void;
+  bodyType?: string;
+  make?: string;
+  clearFilters?: () => void;
+  isLoading?: boolean;
 }
 
 const VehicleList: React.FC<VehicleListProps> = ({ 
   vehicles, 
-  bodyType, 
+  bodyType,
   make,
-  clearFilters 
+  clearFilters,
+  isLoading = false
 }) => {
   return (
     <div className="w-full md:w-3/4">
@@ -40,13 +42,15 @@ const VehicleList: React.FC<VehicleListProps> = ({
         <div className="text-center py-12">
           <h3 className="text-lg font-medium text-gray-500">No vehicles match your search criteria</h3>
           <p className="mt-2 text-gray-400">Try adjusting your filters</p>
-          <Button 
-            variant="outline" 
-            onClick={clearFilters} 
-            className="mt-4"
-          >
-            Clear All Filters
-          </Button>
+          {clearFilters && (
+            <Button 
+              variant="outline" 
+              onClick={clearFilters} 
+              className="mt-4"
+            >
+              Clear All Filters
+            </Button>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

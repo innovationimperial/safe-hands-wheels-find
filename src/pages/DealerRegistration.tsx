@@ -84,10 +84,12 @@ const DealerRegistration = () => {
     setIsSubmitting(true);
 
     try {
-      // First update user's role in profiles table
+      // First update user's role in profiles table using upsert to handle both new and existing profiles
       const { error: profileError } = await supabase
         .from("profiles")
-        .update({ role: "dealer" })
+        .update({ 
+          role: "dealer" 
+        })
         .eq("id", user.id);
 
       if (profileError) throw profileError;
@@ -104,6 +106,7 @@ const DealerRegistration = () => {
         zip: values.zip,
         website: values.website || null,
         description: values.description || null,
+        status: 'Pending'
       });
 
       if (dealerError) throw dealerError;

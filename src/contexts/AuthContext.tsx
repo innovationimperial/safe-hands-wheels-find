@@ -110,10 +110,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       if (profileData) {
-        setProfile(profileData as UserProfile);
+        // Handle potential missing role in existing profiles
+        const userProfile: UserProfile = {
+          id: profileData.id,
+          username: profileData.username || '',
+          full_name: profileData.full_name,
+          avatar_url: profileData.avatar_url,
+          role: profileData.role || 'user' // Default to 'user' if role is missing
+        };
         
-        // If user has profile, check if they're a dealer
-        if (profileData.role === 'dealer') {
+        setProfile(userProfile);
+        
+        // If user has dealer role, check if they're a dealer
+        if (userProfile.role === 'dealer') {
           const { data: dealerData, error: dealerError } = await supabase
             .from('dealers')
             .select('*')
@@ -123,7 +132,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           if (dealerError) {
             console.error('Error fetching dealer profile:', dealerError);
           } else if (dealerData) {
-            setDealerProfile(dealerData as DealerProfile);
+            const dealer: DealerProfile = {
+              id: dealerData.id,
+              name: dealerData.name,
+              email: dealerData.email,
+              phone: dealerData.phone,
+              status: dealerData.status || 'Pending' // Default to 'Pending' if status is missing
+            };
+            setDealerProfile(dealer);
           }
         }
       }
