@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/carousel";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { cn } from "@/lib/utils";
+import { toast } from "@/hooks/use-toast";
 
 interface VehicleImageGalleryProps {
   images: string[];
@@ -40,6 +41,15 @@ const VehicleImageGallery = ({ images, title }: VehicleImageGalleryProps) => {
     );
   }
 
+  const handleImageError = (image: string) => {
+    console.error(`Failed to load image: ${image}`);
+    toast({
+      title: "Image Error",
+      description: "Failed to load one or more vehicle images",
+      variant: "destructive"
+    });
+  };
+
   return (
     <div className="mb-6 space-y-4">
       {/* Main carousel with large images */}
@@ -47,6 +57,7 @@ const VehicleImageGallery = ({ images, title }: VehicleImageGalleryProps) => {
         className="w-full" 
         opts={{
           startIndex: currentImageIndex,
+          loop: validImages.length > 1
         }}
         onSelect={(index) => {
           if (typeof index === 'number') {
@@ -63,7 +74,7 @@ const VehicleImageGallery = ({ images, title }: VehicleImageGalleryProps) => {
                   alt={`${title} - Image ${index + 1}`}
                   className="w-full h-full object-cover"
                   onError={(e) => {
-                    console.error(`Failed to load image: ${image}`);
+                    handleImageError(image);
                     (e.target as HTMLImageElement).src = '/placeholder.svg';
                   }}
                 />

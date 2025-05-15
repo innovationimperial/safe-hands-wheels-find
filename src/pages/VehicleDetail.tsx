@@ -21,7 +21,7 @@ const VehicleDetail = () => {
         id: vehicle.id,
         title: vehicle.title,
         primaryImage: vehicle.image,
-        additionalImages: vehicle.image ? allImages.slice(1) : allImages,
+        additionalImages: allImages,
         totalImages: allImages.length
       });
     }

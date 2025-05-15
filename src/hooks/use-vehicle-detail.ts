@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { VehicleFeature } from "@/types/vehicle-detail";
 import { useMemo } from "react";
+import { toast } from "@/hooks/use-toast";
 
 export const useVehicleDetail = (id: string | undefined) => {
   const { data: vehicleData, isLoading, error } = useQuery({
@@ -25,7 +26,14 @@ export const useVehicleDetail = (id: string | undefined) => {
         .select('image_url')
         .eq('vehicle_id', id);
       
-      if (imagesError) throw imagesError;
+      if (imagesError) {
+        console.error("Error fetching vehicle images:", imagesError);
+        toast({
+          title: "Error",
+          description: "Failed to load vehicle images",
+          variant: "destructive"
+        });
+      }
       
       console.log(`Retrieved ${images?.length || 0} additional images from vehicle_images table for vehicle ${id}`);
       
@@ -89,7 +97,11 @@ export const useVehicleDetail = (id: string | undefined) => {
     });
     
     const allUniqueImages = Array.from(uniqueImages);
-    console.log(`Final image list contains ${allUniqueImages.length} unique images`);
+    console.log(`Final image list contains ${allUniqueImages.length} unique images:`, allUniqueImages);
+    
+    if (allUniqueImages.length === 0) {
+      console.warn("No images found for vehicle!");
+    }
     
     return allUniqueImages;
   }, [vehicleData]);

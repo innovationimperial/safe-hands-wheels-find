@@ -23,7 +23,7 @@ export function useVehicleImages(vehicleId?: string) {
         const vehicleImages = await getVehicleImages(vehicleId);
         console.log(`Loaded ${vehicleImages.length} images for vehicle ${vehicleId}:`, vehicleImages);
         
-        // Filter out any empty image URLs before setting state
+        // Filter out any empty or invalid image URLs before setting state
         const validImages = vehicleImages.filter(url => url && url.trim() !== "");
         console.log(`After filtering: ${validImages.length} valid images`);
         
