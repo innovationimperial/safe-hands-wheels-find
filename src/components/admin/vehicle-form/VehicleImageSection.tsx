@@ -1,6 +1,7 @@
 
 import React, { useEffect } from 'react';
 import MultipleImageUploader from '@/components/admin/MultipleImageUploader';
+import { toast } from '@/hooks/use-toast';
 
 interface VehicleImageSectionProps {
   userId: string;
@@ -18,6 +19,26 @@ const VehicleImageSection: React.FC<VehicleImageSectionProps> = ({
     console.log("VehicleImageSection: Received images:", images);
   }, [images]);
 
+  const handleImageUpdate = (newImages: string[]) => {
+    console.log("VehicleImageSection: Updating images:", newImages);
+    // Validate images before updating
+    const validImages = newImages.filter(url => url && url.trim() !== "");
+    
+    if (validImages.length !== newImages.length) {
+      console.warn("Some invalid image URLs were filtered out");
+    }
+    
+    updateImages(validImages);
+    
+    if (validImages.length === 0) {
+      toast({
+        title: "Image Required",
+        description: "Please upload at least one image for the vehicle",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <div className="space-y-2">
       <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
@@ -25,7 +46,7 @@ const VehicleImageSection: React.FC<VehicleImageSectionProps> = ({
       </label>
       <MultipleImageUploader
         userId={userId}
-        onImagesUploaded={updateImages}
+        onImagesUploaded={handleImageUpdate}
         existingImages={images}
         maxImages={5}
       />

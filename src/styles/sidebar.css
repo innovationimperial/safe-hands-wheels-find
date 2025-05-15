@@ -7,9 +7,9 @@
     --sidebar: 240 240 240;
     --sidebar-foreground: 20 20 20;
     --sidebar-border: 215 215 215;
-    --sidebar-accent: 235 235 235;
+    --sidebar-accent: 245 245 245;
     --sidebar-accent-foreground: 0 0 0;
-    --sidebar-ring: 66 153 225;
+    --sidebar-ring: 59 130 246;
   }
 
   .dark {
@@ -18,6 +18,14 @@
     --sidebar-border: 50 50 50;
     --sidebar-accent: 55 55 55;
     --sidebar-accent-foreground: 250 250 250;
-    --sidebar-ring: 66 153 225;
+    --sidebar-ring: 59 130 246;
   }
 }
+
+/* Active item styles override */
+[data-active="true"] {
+  background-color: rgb(var(--sidebar-accent)) !important;
+  color: rgb(var(--sidebar-accent-foreground)) !important;
+  font-weight: 500 !important;
+}
+

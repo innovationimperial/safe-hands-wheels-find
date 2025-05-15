@@ -28,34 +28,68 @@ export const uploadVehicleImage = async (file: File, userId: string): Promise<st
       throw new Error('File size exceeds 5MB limit');
     }
     
-    // Create the bucket if it doesn't exist yet
-    const { data: buckets } = await supabase.storage.listBuckets();
-    const vehicleImagesBucket = buckets?.find(b => b.name === 'vehicle-images');
-    
-    if (!vehicleImagesBucket) {
-      console.log("Creating 'vehicle-images' bucket");
-      const { error: bucketError } = await supabase.storage.createBucket('vehicle-images', {
-        public: true,
-        fileSizeLimit: 5242880, // 5MB in bytes
-      });
+    // Create the bucket if it doesn't exist yet - using a more robust approach
+    try {
+      // First check if the bucket exists
+      const { data: buckets } = await supabase.storage.listBuckets();
+      const vehicleImagesBucket = buckets?.find(b => b.name === 'vehicle-images');
       
-      if (bucketError) {
-        console.error('Error creating bucket:', bucketError);
-        return null;
+      if (!vehicleImagesBucket) {
+        console.log("Creating 'vehicle-images' bucket");
+        const { error: bucketError } = await supabase.storage.createBucket('vehicle-images', {
+          public: true,
+          fileSizeLimit: 5242880, // 5MB in bytes
+        });
+        
+        if (bucketError) {
+          console.error('Error creating bucket:', bucketError);
+          // Continue anyway - bucket might exist but not be visible to this user
+        }
       }
+    } catch (bucketError) {
+      console.error('Error checking/creating bucket:', bucketError);
+      // Continue anyway - bucket might exist but with different permissions
     }
     
-    // Upload the file to Supabase Storage
-    const { error: uploadError, data } = await supabase.storage
-      .from('vehicle-images')
-      .upload(filePath, file, {
-        cacheControl: '3600',
-        upsert: false
-      });
+    // Upload the file to Supabase Storage with retry logic
+    let uploadAttempts = 0;
+    const maxAttempts = 3;
+    let uploadError = null;
+    let data = null;
+    
+    while (uploadAttempts < maxAttempts) {
+      try {
+        uploadAttempts++;
+        console.log(`Upload attempt ${uploadAttempts} for ${file.name}`);
+        
+        const uploadResult = await supabase.storage
+          .from('vehicle-images')
+          .upload(filePath, file, {
+            cacheControl: '3600',
+            upsert: true // Changed to true to handle potential conflicts
+          });
+          
+        if (uploadResult.error) {
+          console.error(`Upload attempt ${uploadAttempts} failed:`, uploadResult.error);
+          uploadError = uploadResult.error;
+        } else {
+          data = uploadResult.data;
+          uploadError = null;
+          break; // Exit the retry loop on success
+        }
+      } catch (err) {
+        console.error(`Upload attempt ${uploadAttempts} exception:`, err);
+        uploadError = err;
+      }
+      
+      if (uploadAttempts < maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before retrying
+      }
+    }
       
     if (uploadError) {
-      console.error('Error uploading file:', uploadError);
-      return null;
+      console.error('All upload attempts failed:', uploadError);
+      throw uploadError;
     }
     
     console.log('File uploaded successfully:', data?.path);

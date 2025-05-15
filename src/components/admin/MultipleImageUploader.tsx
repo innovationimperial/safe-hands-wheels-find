@@ -21,6 +21,7 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
 }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   
   // Initialize uploadedImages from existingImages when component mounts
   // or when existingImages changes
@@ -45,6 +46,9 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
     
     if (acceptedFiles.length === 0) return;
     
+    // Reset any previous errors
+    setUploadError(null);
+    
     // Check if adding these files would exceed the max limit
     if (uploadedImages.length + acceptedFiles.length > maxImages) {
       toast({
@@ -58,10 +62,27 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
     setIsUploading(true);
     
     try {
-      const uploadPromises = acceptedFiles.map(file => uploadVehicleImage(file, userId));
-      const results = await Promise.all(uploadPromises);
+      // Process each file sequentially instead of in parallel
+      const successfulUploads: string[] = [];
+      const failedUploads: string[] = [];
       
-      const successfulUploads = results.filter(Boolean) as string[];
+      for (const file of acceptedFiles) {
+        try {
+          console.log(`Processing file: ${file.name}`);
+          const imageUrl = await uploadVehicleImage(file, userId);
+          
+          if (imageUrl) {
+            successfulUploads.push(imageUrl);
+            console.log(`Successfully uploaded: ${file.name}`);
+          } else {
+            failedUploads.push(file.name);
+            console.error(`Failed to upload: ${file.name}`);
+          }
+        } catch (fileError) {
+          console.error(`Error uploading ${file.name}:`, fileError);
+          failedUploads.push(file.name);
+        }
+      }
       
       if (successfulUploads.length > 0) {
         const newImages = [...uploadedImages, ...successfulUploads];
@@ -72,15 +93,19 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
           title: "Images uploaded",
           description: `Successfully uploaded ${successfulUploads.length} image(s).`
         });
-      } else {
+      } 
+      
+      if (failedUploads.length > 0) {
+        setUploadError(`Failed to upload ${failedUploads.length} image(s).`);
         toast({
-          title: "Upload failed",
-          description: "Failed to upload images. Please try again.",
+          title: "Some uploads failed",
+          description: `Failed to upload ${failedUploads.length} image(s). Please try again.`,
           variant: "destructive"
         });
       }
     } catch (error) {
       console.error('Error in onDrop:', error);
+      setUploadError('Failed to upload images. Please try again.');
       toast({
         title: "Upload failed",
         description: "An unexpected error occurred. Please try again.",
@@ -137,6 +162,14 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
               </Button>
             </div>
           ))}
+        </div>
+      )}
+      
+      {/* Error message */}
+      {uploadError && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
+          <p className="font-medium">{uploadError}</p>
+          <p className="text-sm mt-1">Please check your connection and try again.</p>
         </div>
       )}
       

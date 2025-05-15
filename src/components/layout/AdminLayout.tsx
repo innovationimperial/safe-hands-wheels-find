@@ -69,7 +69,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
                   <SidebarMenuButton 
                     asChild
                     isActive={isActive(item.path)}
-                    tooltip={item.label}
+                    className="text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground"
                   >
                     <Link to={item.path} className="flex items-center">
                       {item.icon}
