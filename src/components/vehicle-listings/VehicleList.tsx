@@ -1,5 +1,6 @@
+
 import React from "react";
-import { Vehicle } from "@/types/Vehicle";
+import { Vehicle } from "@/types/vehicle-detail";
 import {
   Table,
   TableBody,
