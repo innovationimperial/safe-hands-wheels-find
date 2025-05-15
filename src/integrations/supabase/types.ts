@@ -21,6 +21,7 @@ export type Database = {
           name: string
           phone: string
           state: string
+          status: string | null
           updated_at: string
           user_id: string
           website: string | null
@@ -37,6 +38,7 @@ export type Database = {
           name: string
           phone: string
           state: string
+          status?: string | null
           updated_at?: string
           user_id: string
           website?: string | null
@@ -53,6 +55,7 @@ export type Database = {
           name?: string
           phone?: string
           state?: string
+          status?: string | null
           updated_at?: string
           user_id?: string
           website?: string | null
@@ -66,6 +69,7 @@ export type Database = {
           created_at: string
           full_name: string | null
           id: string
+          role: string | null
           updated_at: string
           username: string | null
         }
@@ -74,6 +78,7 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id: string
+          role?: string | null
           updated_at?: string
           username?: string | null
         }
@@ -82,6 +87,7 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
+          role?: string | null
           updated_at?: string
           username?: string | null
         }
@@ -222,6 +228,10 @@ export type Database = {
       is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      set_user_role: {
+        Args: { user_id: string; new_role: string }
+        Returns: undefined
       }
     }
     Enums: {

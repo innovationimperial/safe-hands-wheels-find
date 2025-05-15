@@ -110,7 +110,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       if (profileData) {
-        // Handle potential missing role in existing profiles
+        // Ensure the role field exists on the profile
         const userProfile: UserProfile = {
           id: profileData.id,
           username: profileData.username || '',
@@ -137,7 +137,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               name: dealerData.name,
               email: dealerData.email,
               phone: dealerData.phone,
-              status: dealerData.status as 'Pending' | 'Approved' | 'Rejected' || 'Pending' // Default to 'Pending' if status is missing
+              status: dealerData.status as 'Pending' | 'Approved' | 'Rejected' || 'Pending'
             };
             setDealerProfile(dealer);
           }
