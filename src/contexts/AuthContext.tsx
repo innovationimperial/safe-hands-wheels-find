@@ -137,7 +137,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               name: dealerData.name,
               email: dealerData.email,
               phone: dealerData.phone,
-              status: dealerData.status || 'Pending' // Default to 'Pending' if status is missing
+              status: dealerData.status as 'Pending' | 'Approved' | 'Rejected' || 'Pending' // Default to 'Pending' if status is missing
             };
             setDealerProfile(dealer);
           }

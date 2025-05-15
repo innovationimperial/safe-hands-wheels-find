@@ -42,7 +42,7 @@ const DealerRegistration = () => {
   const { toast } = useToast();
   const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<DealerFormValues>({
     resolver: zodResolver(dealerFormSchema),
@@ -91,6 +91,7 @@ const DealerRegistration = () => {
       });
 
       if (profileError) {
+        console.error("Failed to update role using RPC:", profileError);
         // If RPC function failed, try direct update (fallback)
         const { error: updateError } = await supabase
           .from("profiles")
