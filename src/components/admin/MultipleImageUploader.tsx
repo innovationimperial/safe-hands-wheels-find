@@ -1,5 +1,7 @@
-import React, { useState, useCallback, useRef } from 'react';
+
+import React, { useState, useCallback, useEffect } from 'react';
 import { uploadVehicleImage } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 import ImageDropzone from '@/components/admin/image-uploader/ImageDropzone';
 import ImagePreviewGrid from '@/components/admin/image-uploader/ImagePreviewGrid';
 import UploadProgressBar from '@/components/admin/image-uploader/UploadProgressBar';
