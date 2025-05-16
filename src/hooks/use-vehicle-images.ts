@@ -53,7 +53,7 @@ export function useVehicleImages(vehicleId?: string) {
     
     if (images.length === 0) {
       console.warn("No images to save for vehicle", newVehicleId);
-      return true; // Nothing to save is still a success
+      return false; // Changed to false to indicate failure when no images are present
     }
     
     console.log(`Saving ${images.length} images for vehicle ${newVehicleId}:`, images);
@@ -65,7 +65,7 @@ export function useVehicleImages(vehicleId?: string) {
       
       if (validImages.length === 0) {
         console.warn("No valid images to save after filtering");
-        return true;
+        return false; // Changed to false to indicate failure
       }
       
       const success = await saveVehicleImages(newVehicleId, validImages);

@@ -41,6 +41,7 @@ export function useVehicleForm(vehicleId?: string) {
 
       // Make sure we have at least one image before proceeding
       if (images.length === 0) {
+        console.error("No images available for vehicle");
         toast({
           title: "Image Required",
           description: "Please upload at least one image for the vehicle",

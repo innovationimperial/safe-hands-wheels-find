@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -44,6 +44,11 @@ const AdminVehicleForm = () => {
       featured: false,
     },
   });
+
+  // Debug logs
+  useEffect(() => {
+    console.log("Current images in AdminVehicleForm:", images);
+  }, [images]);
 
   // Fetch vehicle data if editing an existing vehicle
   const { isLoading } = useQuery({
@@ -94,8 +99,12 @@ const AdminVehicleForm = () => {
 
   // Handle form submission
   const onSubmit = (values: VehicleFormValues) => {
+    // Log the image state before submission
+    console.log("Images before submission:", images);
+    
     // Check if at least one image is uploaded
     if (images.length === 0) {
+      console.error("No images uploaded. Cannot submit form.");
       return;
     }
     

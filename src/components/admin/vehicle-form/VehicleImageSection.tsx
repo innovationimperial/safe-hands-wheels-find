@@ -30,13 +30,14 @@ const VehicleImageSection: React.FC<VehicleImageSectionProps> = ({
     
     updateImages(validImages);
     
-    if (validImages.length === 0) {
+    // Only show toast notifications when appropriate
+    if (validImages.length === 0 && newImages.length > 0) {
       toast({
         title: "Image Required",
         description: "Please upload at least one image for the vehicle",
         variant: "destructive"
       });
-    } else {
+    } else if (validImages.length > 0) {
       toast({
         title: "Images Updated",
         description: `${validImages.length} image(s) added to the vehicle`
@@ -58,6 +59,7 @@ const VehicleImageSection: React.FC<VehicleImageSectionProps> = ({
       <p className="text-sm text-muted-foreground">
         Upload up to 5 images of the vehicle. The first image will be used as the main image.
       </p>
+      {/* Only show error if there are no valid images */}
       {images.length === 0 && (
         <p className="text-sm text-red-500">
           At least one image is required
