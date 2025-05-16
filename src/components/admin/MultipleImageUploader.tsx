@@ -1,11 +1,11 @@
 
 import React, { useCallback, useState, useEffect } from 'react';
-import { useDropzone } from 'react-dropzone';
-import { X, Upload, Loader2, Image as ImageIcon } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
 import { uploadVehicleImage } from '@/integrations/supabase/client';
-import { Progress } from '@/components/ui/progress';
+import ImagePreviewGrid from './image-uploader/ImagePreviewGrid';
+import UploadProgressBar from './image-uploader/UploadProgressBar';
+import UploadError from './image-uploader/UploadError';
+import ImageDropzone from './image-uploader/ImageDropzone';
 
 interface MultipleImageUploaderProps {
   onImagesUploaded: (imageUrls: string[]) => void;
@@ -151,114 +151,32 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
     }
   };
   
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: {
-      'image/jpeg': [],
-      'image/png': [],
-      'image/webp': []
-    },
-    disabled: isUploading || uploadedImages.length >= maxImages
-  });
-  
   return (
     <div className="space-y-4">
       {/* Image preview grid */}
-      {uploadedImages.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          {uploadedImages.map((imgUrl, index) => (
-            <div 
-              key={`${imgUrl}-${index}`} 
-              className="relative aspect-square rounded-md overflow-hidden border border-gray-200 group bg-gray-50"
-            >
-              {imagePreviewErrors[index] ? (
-                <div className="w-full h-full flex flex-col items-center justify-center p-2 text-center">
-                  <ImageIcon className="h-8 w-8 text-gray-300 mb-2" />
-                  <p className="text-xs text-gray-400">Image preview unavailable</p>
-                </div>
-              ) : (
-                <img 
-                  src={imgUrl} 
-                  alt={`Vehicle image ${index + 1}`}
-                  className="w-full h-full object-cover"
-                  onError={() => handleImageError(index)}
-                />
-              )}
-              <Button
-                type="button"
-                variant="destructive"
-                size="icon"
-                className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                onClick={() => removeImage(index)}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-              {index === 0 && (
-                <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs py-1 px-2 text-center">
-                  Main Image
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
+      <ImagePreviewGrid 
+        images={uploadedImages} 
+        onRemoveImage={removeImage} 
+        imagePreviewErrors={imagePreviewErrors} 
+      />
       
       {/* Upload progress */}
-      {isUploading && (
-        <div className="space-y-2">
-          <div className="flex justify-between text-xs">
-            <span>Uploading...</span>
-            <span>{uploadProgress}%</span>
-          </div>
-          <Progress value={uploadProgress} className="h-2" />
-        </div>
-      )}
+      <UploadProgressBar 
+        isUploading={isUploading} 
+        progress={uploadProgress} 
+      />
       
       {/* Error message */}
-      {uploadError && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
-          <p className="font-medium">{uploadError}</p>
-          <p className="text-sm mt-1">Please check your connection and try again.</p>
-        </div>
-      )}
+      <UploadError error={uploadError} />
       
       {/* Dropzone area */}
-      {uploadedImages.length < maxImages && (
-        <div 
-          {...getRootProps()} 
-          className={`border-2 border-dashed rounded-md p-6 transition-colors cursor-pointer ${
-            isDragActive 
-              ? 'border-primary bg-primary/10' 
-              : 'border-gray-300 hover:border-gray-400'
-          } ${isUploading ? 'bg-gray-50' : ''}`}
-        >
-          <input {...getInputProps()} />
-          <div className="flex flex-col items-center justify-center gap-2 text-center">
-            {isUploading ? (
-              <>
-                <Loader2 className="h-10 w-10 text-gray-400 animate-spin" />
-                <p className="text-sm text-gray-500">Uploading image(s)...</p>
-              </>
-            ) : (
-              <>
-                <Upload className="h-10 w-10 text-gray-400" />
-                <p className="font-medium">Drag & drop images here, or click to select</p>
-                <p className="text-sm text-gray-500">
-                  Supports: JPEG, PNG, WebP (Max 5MB)
-                </p>
-                <p className="text-sm text-gray-500">
-                  {uploadedImages.length} of {maxImages} images uploaded
-                </p>
-                {uploadedImages.length > 0 && (
-                  <p className="text-xs text-amber-600 font-medium">
-                    The first uploaded image will be used as the main vehicle image
-                  </p>
-                )}
-              </>
-            )}
-          </div>
-        </div>
-      )}
+      <ImageDropzone 
+        onDrop={onDrop}
+        isUploading={isUploading}
+        disabled={uploadedImages.length >= maxImages}
+        uploadedCount={uploadedImages.length}
+        maxImages={maxImages}
+      />
     </div>
   );
 };
