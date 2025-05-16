@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Fuel, Clock, MapPin } from "lucide-react";
-import { Vehicle } from "@/hooks/use-vehicle-listings";
+import { Vehicle } from "@/types/vehicle-detail";
 
 interface VehicleCardProps {
   vehicle: Vehicle;
