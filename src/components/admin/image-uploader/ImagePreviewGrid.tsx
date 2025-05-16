@@ -7,12 +7,14 @@ interface ImagePreviewGridProps {
   images: string[];
   onRemoveImage: (index: number) => void;
   imagePreviewErrors: Record<number, boolean>;
+  onImageError?: (index: number) => void;
 }
 
 const ImagePreviewGrid: React.FC<ImagePreviewGridProps> = ({ 
   images, 
   onRemoveImage, 
-  imagePreviewErrors 
+  imagePreviewErrors,
+  onImageError = () => {} 
 }) => {
   if (images.length === 0) return null;
   
@@ -33,7 +35,7 @@ const ImagePreviewGrid: React.FC<ImagePreviewGridProps> = ({
               src={imgUrl} 
               alt={`Vehicle image ${index + 1}`}
               className="w-full h-full object-cover"
-              onError={() => onRemoveImage(index)}
+              onError={() => onImageError(index)}
             />
           )}
           <Button

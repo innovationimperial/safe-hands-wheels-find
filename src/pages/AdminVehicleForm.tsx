@@ -17,6 +17,7 @@ import VehicleBasicInfoFields from '@/components/admin/vehicle-form/VehicleBasic
 import VehicleDropdownFields from '@/components/admin/vehicle-form/VehicleDropdownFields';
 import VehicleFeaturedToggle from '@/components/admin/vehicle-form/VehicleFeaturedToggle';
 import FormActions from '@/components/admin/vehicle-form/FormActions';
+import { toast } from '@/hooks/use-toast';
 
 const AdminVehicleForm = () => {
   const { id } = useParams<{ id: string }>();
@@ -106,6 +107,11 @@ const AdminVehicleForm = () => {
     // Check if at least one image is uploaded
     if (!images || images.length === 0) {
       console.error("No images uploaded. Cannot submit form.");
+      toast({
+        title: "Image Required",
+        description: "Please upload at least one image for the vehicle",
+        variant: "destructive"
+      });
       return;
     }
     
@@ -141,7 +147,7 @@ const AdminVehicleForm = () => {
               <FormActions
                 isSubmitting={isSubmitting}
                 isLoading={isLoading}
-                isValid={images && images.length > 0}
+                isValid={true} // We handle image validation separately
                 isEdit={!!id}
               />
             </form>

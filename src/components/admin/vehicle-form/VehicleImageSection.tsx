@@ -3,6 +3,7 @@ import React, { useEffect } from 'react';
 import MultipleImageUploader from '@/components/admin/MultipleImageUploader';
 import { toast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from 'lucide-react';
 
 interface VehicleImageSectionProps {
   userId: string;
@@ -38,11 +39,6 @@ const VehicleImageSection: React.FC<VehicleImageSectionProps> = ({
         description: "Please upload at least one image for the vehicle",
         variant: "destructive"
       });
-    } else if (validImages.length > 0) {
-      toast({
-        title: "Images Updated",
-        description: `${validImages.length} image(s) added to the vehicle`
-      });
     }
   };
 
@@ -74,8 +70,9 @@ const VehicleImageSection: React.FC<VehicleImageSectionProps> = ({
       {/* Only show error if there are no valid images */}
       {!hasImages && (
         <Alert variant="destructive" className="mt-2">
+          <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            At least one image is required
+            At least one image is required for the vehicle
           </AlertDescription>
         </Alert>
       )}

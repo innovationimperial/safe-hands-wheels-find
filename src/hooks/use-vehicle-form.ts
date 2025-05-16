@@ -12,7 +12,7 @@ export function useVehicleForm(vehicleId?: string) {
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
-  const { images, saveImages } = useVehicleImages(vehicleId);
+  const { images } = useVehicleImages(vehicleId);
   const { hasValidImages } = useImageValidation();
   const { prepareVehicleData } = useVehicleSubmission();
   
@@ -22,6 +22,8 @@ export function useVehicleForm(vehicleId?: string) {
   // Create or update vehicle mutation
   const mutation = useMutation({
     mutationFn: async (values: VehicleFormValues) => {
+      console.log("Submitting form with images:", images);
+      
       // Validate images - ensure they are properly filtered and non-empty
       if (!hasValidImages(images)) {
         console.error("No valid images available for vehicle");
