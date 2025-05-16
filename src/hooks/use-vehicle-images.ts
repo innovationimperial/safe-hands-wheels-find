@@ -1,12 +1,18 @@
 
 import { useState, useEffect } from 'react';
-import { getVehicleImages, saveVehicleImages } from '@/integrations/supabase/client';
+import { getVehicleImages } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { useImageValidation } from '@/hooks/use-image-validation';
+import { useImageSaving } from '@/hooks/use-image-saving';
 
 export function useVehicleImages(vehicleId?: string) {
   const [images, setImages] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Use more focused hooks
+  const { validateImages } = useImageValidation();
+  const { saveImages } = useImageSaving();
   
   // Load images for an existing vehicle
   useEffect(() => {
@@ -24,7 +30,7 @@ export function useVehicleImages(vehicleId?: string) {
         console.log(`Loaded ${vehicleImages.length} images for vehicle ${vehicleId}:`, vehicleImages);
         
         // Filter out any empty or invalid image URLs before setting state
-        const validImages = vehicleImages.filter(url => url && url.trim() !== "");
+        const validImages = validateImages(vehicleImages);
         console.log(`After filtering: ${validImages.length} valid images`);
         
         setImages(validImages);
@@ -42,55 +48,12 @@ export function useVehicleImages(vehicleId?: string) {
     };
     
     loadImages();
-  }, [vehicleId]);
-  
-  // Save images for a vehicle
-  const saveImages = async (newVehicleId: string): Promise<boolean> => {
-    if (!newVehicleId) {
-      console.error("No vehicle ID provided for saving images");
-      return false;
-    }
-    
-    // Make sure to clean any empty image URLs before checking
-    const validImages = images.filter(url => url && url.trim() !== "");
-    
-    if (validImages.length === 0) {
-      console.warn("No images to save for vehicle", newVehicleId);
-      return false;
-    }
-    
-    console.log(`Saving ${validImages.length} images for vehicle ${newVehicleId}:`, validImages);
-    
-    try {
-      const success = await saveVehicleImages(newVehicleId, validImages);
-      
-      if (!success) {
-        console.error('Failed to save vehicle images to database');
-        toast({
-          title: "Error",
-          description: "Failed to save vehicle images",
-          variant: "destructive"
-        });
-        return false;
-      }
-      
-      console.log(`Successfully saved ${validImages.length} images for vehicle ${newVehicleId}`);
-      return true;
-    } catch (err) {
-      console.error('Failed to save vehicle images:', err);
-      toast({
-        title: "Error",
-        description: "Failed to save vehicle images",
-        variant: "destructive"
-      });
-      return false;
-    }
-  };
+  }, [vehicleId, validateImages]);
   
   // Update the images list
   const updateImages = (newImages: string[]) => {
     // Filter out any empty strings or undefined values
-    const validImages = newImages.filter(url => url && url.trim() !== "");
+    const validImages = validateImages(newImages);
     console.log('Updating images array:', validImages);
     setImages(validImages);
   };

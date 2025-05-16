@@ -1,11 +1,9 @@
-
-import React, { useCallback, useState, useEffect } from 'react';
-import { toast } from '@/hooks/use-toast';
+import React, { useState, useCallback, useRef } from 'react';
 import { uploadVehicleImage } from '@/integrations/supabase/client';
-import ImagePreviewGrid from './image-uploader/ImagePreviewGrid';
-import UploadProgressBar from './image-uploader/UploadProgressBar';
-import UploadError from './image-uploader/UploadError';
-import ImageDropzone from './image-uploader/ImageDropzone';
+import ImageDropzone from '@/components/admin/image-uploader/ImageDropzone';
+import ImagePreviewGrid from '@/components/admin/image-uploader/ImagePreviewGrid';
+import UploadProgressBar from '@/components/admin/image-uploader/UploadProgressBar';
+import UploadError from '@/components/admin/image-uploader/UploadError';
 
 interface MultipleImageUploaderProps {
   onImagesUploaded: (imageUrls: string[]) => void;
