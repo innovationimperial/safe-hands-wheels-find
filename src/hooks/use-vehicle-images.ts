@@ -51,23 +51,17 @@ export function useVehicleImages(vehicleId?: string) {
       return false;
     }
     
-    if (images.length === 0) {
+    // Make sure to clean any empty image URLs before checking
+    const validImages = images.filter(url => url && url.trim() !== "");
+    
+    if (validImages.length === 0) {
       console.warn("No images to save for vehicle", newVehicleId);
-      return false; // Changed to false to indicate failure when no images are present
+      return false;
     }
     
-    console.log(`Saving ${images.length} images for vehicle ${newVehicleId}:`, images);
+    console.log(`Saving ${validImages.length} images for vehicle ${newVehicleId}:`, validImages);
     
     try {
-      // Make sure to clean any empty image URLs before saving
-      const validImages = images.filter(url => url && url.trim() !== "");
-      console.log(`After filtering: Saving ${validImages.length} valid images`);
-      
-      if (validImages.length === 0) {
-        console.warn("No valid images to save after filtering");
-        return false; // Changed to false to indicate failure
-      }
-      
       const success = await saveVehicleImages(newVehicleId, validImages);
       
       if (!success) {

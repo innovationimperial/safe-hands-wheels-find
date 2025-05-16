@@ -6,7 +6,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import AdminLayout from '@/components/layout/AdminLayout';
 import { Form } from '@/components/ui/form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { vehicleFormSchema, VehicleFormValues } from '@/schemas/vehicleSchema';
@@ -22,7 +21,7 @@ import FormActions from '@/components/admin/vehicle-form/FormActions';
 const AdminVehicleForm = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
-  const { images, updateImages } = useVehicleImages(id);
+  const { images, updateImages, isLoading: imagesLoading } = useVehicleImages(id);
   const { isSubmitting, submitForm } = useVehicleForm(id);
 
   // Define the form with validation schema
@@ -45,10 +44,12 @@ const AdminVehicleForm = () => {
     },
   });
 
-  // Debug logs
+  // Enhanced debug logs
   useEffect(() => {
     console.log("Current images in AdminVehicleForm:", images);
-  }, [images]);
+    console.log("Images loading state:", imagesLoading);
+    console.log("Has images:", images && images.length > 0);
+  }, [images, imagesLoading]);
 
   // Fetch vehicle data if editing an existing vehicle
   const { isLoading } = useQuery({
@@ -103,7 +104,7 @@ const AdminVehicleForm = () => {
     console.log("Images before submission:", images);
     
     // Check if at least one image is uploaded
-    if (images.length === 0) {
+    if (!images || images.length === 0) {
       console.error("No images uploaded. Cannot submit form.");
       return;
     }
@@ -140,7 +141,7 @@ const AdminVehicleForm = () => {
               <FormActions
                 isSubmitting={isSubmitting}
                 isLoading={isLoading}
-                isValid={images.length > 0}
+                isValid={images && images.length > 0}
                 isEdit={!!id}
               />
             </form>

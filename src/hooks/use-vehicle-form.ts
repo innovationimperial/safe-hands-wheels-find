@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useQueryClient, useMutation } from '@tanstack/react-query';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
 import { VehicleFormValues } from '@/schemas/vehicleSchema';
 import { useVehicleImages } from '@/hooks/use-vehicle-images';
 import { mapFuelTypeToDatabase, DatabaseFuelType, DatabaseVehicleStatus } from '@/types/vehicle';
@@ -39,9 +39,12 @@ export function useVehicleForm(vehicleId?: string) {
         dbStatus = "Reserved";
       }
 
+      // Validate images - ensure they are properly filtered and non-empty
+      const validImages = images.filter(url => url && url.trim() !== "");
+
       // Make sure we have at least one image before proceeding
-      if (images.length === 0) {
-        console.error("No images available for vehicle");
+      if (validImages.length === 0) {
+        console.error("No valid images available for vehicle");
         toast({
           title: "Image Required",
           description: "Please upload at least one image for the vehicle",
@@ -51,7 +54,7 @@ export function useVehicleForm(vehicleId?: string) {
       }
       
       // Use the first image as the main vehicle image
-      const mainImage = images[0];
+      const mainImage = validImages[0];
       console.log("Setting main vehicle image:", mainImage);
 
       const vehicleData = {
@@ -111,7 +114,12 @@ export function useVehicleForm(vehicleId?: string) {
         // Save all images
         const imagesSaved = await saveImages(vehicleId);
         if (!imagesSaved) {
-          console.error("Failed to save some vehicle images");
+          console.error("Failed to save vehicle images");
+          toast({
+            title: "Warning",
+            description: "Vehicle was updated but there was an issue with the images",
+            variant: "destructive"
+          });
         } else {
           console.log("All vehicle images saved successfully");
         }
@@ -136,7 +144,12 @@ export function useVehicleForm(vehicleId?: string) {
           // Save all images
           const imagesSaved = await saveImages(data.id);
           if (!imagesSaved) {
-            console.error("Failed to save some vehicle images");
+            console.error("Failed to save vehicle images");
+            toast({
+              title: "Warning",
+              description: "Vehicle was created but there was an issue with the images",
+              variant: "destructive"
+            });
           } else {
             console.log("All vehicle images saved successfully");
           }

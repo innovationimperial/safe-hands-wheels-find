@@ -2,6 +2,7 @@
 import React, { useEffect } from 'react';
 import MultipleImageUploader from '@/components/admin/MultipleImageUploader';
 import { toast } from '@/hooks/use-toast';
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface VehicleImageSectionProps {
   userId: string;
@@ -45,6 +46,8 @@ const VehicleImageSection: React.FC<VehicleImageSectionProps> = ({
     }
   };
 
+  const hasImages = images && images.length > 0;
+
   return (
     <div className="space-y-2">
       <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
@@ -59,11 +62,22 @@ const VehicleImageSection: React.FC<VehicleImageSectionProps> = ({
       <p className="text-sm text-muted-foreground">
         Upload up to 5 images of the vehicle. The first image will be used as the main image.
       </p>
+      
+      {/* Show current state for debugging */}
+      <div className="text-xs text-gray-500 mt-1">
+        {hasImages ? 
+          `${images.length} image(s) uploaded` : 
+          "No images uploaded yet"
+        }
+      </div>
+
       {/* Only show error if there are no valid images */}
-      {images.length === 0 && (
-        <p className="text-sm text-red-500">
-          At least one image is required
-        </p>
+      {!hasImages && (
+        <Alert variant="destructive" className="mt-2">
+          <AlertDescription>
+            At least one image is required
+          </AlertDescription>
+        </Alert>
       )}
     </div>
   );
