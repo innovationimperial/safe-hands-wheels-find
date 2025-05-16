@@ -105,7 +105,8 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
       if (successfulUploads.length > 0) {
         const newImages = [...uploadedImages, ...successfulUploads];
         setUploadedImages(newImages);
-        // IMPORTANT: Notify parent component about image updates
+        
+        // IMPORTANT: Always notify parent component about image updates
         onImagesUploaded(newImages);
         
         toast({
@@ -142,7 +143,8 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
   const removeImage = (indexToRemove: number) => {
     const newImages = uploadedImages.filter((_, index) => index !== indexToRemove);
     setUploadedImages(newImages);
-    // IMPORTANT: Notify parent component when images are removed
+    
+    // IMPORTANT: Always notify parent component when images are removed
     onImagesUploaded(newImages);
     
     // Also remove from error tracking if exists

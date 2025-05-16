@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
@@ -112,6 +111,7 @@ export const uploadVehicleImage = async (file: File, userId: string): Promise<st
 export const saveVehicleImages = async (vehicleId: string, imageUrls: string[]): Promise<boolean> => {
   try {
     console.log(`Saving ${imageUrls.length} images for vehicle ${vehicleId}`);
+    console.log("Image URLs to save:", JSON.stringify(imageUrls));
     
     // First, delete any existing images for this vehicle
     console.log(`Removing existing images for vehicle ${vehicleId}`);
@@ -125,25 +125,32 @@ export const saveVehicleImages = async (vehicleId: string, imageUrls: string[]):
       return false;
     }
     
+    // Verify we have valid images to insert
+    if (!imageUrls || imageUrls.length === 0) {
+      console.error("No valid image URLs provided to saveVehicleImages");
+      return false;
+    }
+    
     // Create an array of objects to insert
     const imagesToInsert = imageUrls.map(imageUrl => ({
       vehicle_id: vehicleId,
       image_url: imageUrl
     }));
     
-    console.log(`Inserting ${imagesToInsert.length} new image records`);
+    console.log(`Inserting ${imagesToInsert.length} new image records:`, JSON.stringify(imagesToInsert));
     
     // Insert all images
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('vehicle_images')
-      .insert(imagesToInsert);
+      .insert(imagesToInsert)
+      .select();
     
     if (error) {
       console.error('Error saving vehicle images:', error);
       return false;
     }
     
-    console.log(`Successfully saved ${imagesToInsert.length} images`);
+    console.log(`Successfully saved ${imagesToInsert.length} images:`, data);
     return true;
   } catch (error) {
     console.error('Error in saveVehicleImages:', error);

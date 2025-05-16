@@ -37,6 +37,11 @@ export function useVehicleSubmission() {
 
       // Validate images - ensure they are properly filtered and non-empty
       const validImages = images.filter(url => url && url.trim() !== "");
+      
+      // Check if there are any valid images before proceeding
+      if (validImages.length === 0) {
+        throw new Error("At least one image is required");
+      }
 
       // Set the first image as the main vehicle image
       const mainImage = validImages[0];
@@ -97,7 +102,10 @@ export function useVehicleSubmission() {
         console.log("Vehicle updated successfully:", data);
         
         // Save all images
+        console.log("Saving vehicle images:", validImages);
         const imagesSaved = await saveImages(vehicleId, validImages);
+        console.log("Image save result:", imagesSaved);
+        
         if (!imagesSaved) {
           console.error("Failed to save vehicle images");
           toast({
@@ -127,7 +135,10 @@ export function useVehicleSubmission() {
           console.log("Vehicle created successfully:", data);
           
           // Save all images
+          console.log("Saving vehicle images for new vehicle:", validImages);
           const imagesSaved = await saveImages(data.id, validImages);
+          console.log("Image save result:", imagesSaved);
+          
           if (!imagesSaved) {
             console.error("Failed to save vehicle images");
             toast({
