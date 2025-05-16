@@ -1,10 +1,11 @@
 
 import React, { useCallback, useState, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { X, Upload, Loader2 } from 'lucide-react';
+import { X, Upload, Loader2, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
 import { uploadVehicleImage } from '@/integrations/supabase/client';
+import { Progress } from '@/components/ui/progress';
 
 interface MultipleImageUploaderProps {
   onImagesUploaded: (imageUrls: string[]) => void;
@@ -20,8 +21,10 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
   maxImages = 5
 }) => {
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [imagePreviewErrors, setImagePreviewErrors] = useState<Record<number, boolean>>({});
   
   // Initialize uploadedImages from existingImages when component mounts
   // or when existingImages changes
@@ -33,6 +36,10 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
       setUploadedImages(validImages);
     }
   }, [existingImages]);
+  
+  const handleImageError = (index: number) => {
+    setImagePreviewErrors(prev => ({ ...prev, [index]: true }));
+  };
   
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     if (!userId) {
@@ -48,6 +55,7 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
     
     // Reset any previous errors
     setUploadError(null);
+    setUploadProgress(0);
     
     // Check if adding these files would exceed the max limit
     if (uploadedImages.length + acceptedFiles.length > maxImages) {
@@ -66,9 +74,16 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
       const successfulUploads: string[] = [];
       const failedUploads: string[] = [];
       
-      for (const file of acceptedFiles) {
+      for (let i = 0; i < acceptedFiles.length; i++) {
+        const file = acceptedFiles[i];
         try {
-          console.log(`Processing file: ${file.name}`);
+          console.log(`Processing file ${i + 1}/${acceptedFiles.length}: ${file.name}`);
+          
+          // Update progress
+          const progressPerFile = 100 / acceptedFiles.length;
+          const currentProgress = Math.round(progressPerFile * i);
+          setUploadProgress(currentProgress);
+          
           const imageUrl = await uploadVehicleImage(file, userId);
           
           if (imageUrl) {
@@ -83,6 +98,9 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
           failedUploads.push(file.name);
         }
       }
+      
+      // Set to 100% when all files are processed
+      setUploadProgress(100);
       
       if (successfulUploads.length > 0) {
         const newImages = [...uploadedImages, ...successfulUploads];
@@ -112,7 +130,11 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
         variant: "destructive"
       });
     } finally {
-      setIsUploading(false);
+      // Reset progress after a small delay so the user can see it reached 100%
+      setTimeout(() => {
+        setIsUploading(false);
+        setUploadProgress(0);
+      }, 1000);
     }
   }, [userId, onImagesUploaded, uploadedImages, maxImages]);
   
@@ -120,6 +142,13 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
     const newImages = uploadedImages.filter((_, index) => index !== indexToRemove);
     setUploadedImages(newImages);
     onImagesUploaded(newImages);
+    
+    // Also remove from error tracking if exists
+    if (imagePreviewErrors[indexToRemove]) {
+      const newErrors = { ...imagePreviewErrors };
+      delete newErrors[indexToRemove];
+      setImagePreviewErrors(newErrors);
+    }
   };
   
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -140,17 +169,21 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
           {uploadedImages.map((imgUrl, index) => (
             <div 
               key={`${imgUrl}-${index}`} 
-              className="relative aspect-square rounded-md overflow-hidden border border-gray-200 group"
+              className="relative aspect-square rounded-md overflow-hidden border border-gray-200 group bg-gray-50"
             >
-              <img 
-                src={imgUrl} 
-                alt={`Vehicle image ${index + 1}`}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  console.error(`Failed to load image: ${imgUrl}`);
-                  (e.target as HTMLImageElement).src = '/placeholder.svg';
-                }}
-              />
+              {imagePreviewErrors[index] ? (
+                <div className="w-full h-full flex flex-col items-center justify-center p-2 text-center">
+                  <ImageIcon className="h-8 w-8 text-gray-300 mb-2" />
+                  <p className="text-xs text-gray-400">Image preview unavailable</p>
+                </div>
+              ) : (
+                <img 
+                  src={imgUrl} 
+                  alt={`Vehicle image ${index + 1}`}
+                  className="w-full h-full object-cover"
+                  onError={() => handleImageError(index)}
+                />
+              )}
               <Button
                 type="button"
                 variant="destructive"
@@ -160,8 +193,24 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
               >
                 <X className="h-4 w-4" />
               </Button>
+              {index === 0 && (
+                <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs py-1 px-2 text-center">
+                  Main Image
+                </div>
+              )}
             </div>
           ))}
+        </div>
+      )}
+      
+      {/* Upload progress */}
+      {isUploading && (
+        <div className="space-y-2">
+          <div className="flex justify-between text-xs">
+            <span>Uploading...</span>
+            <span>{uploadProgress}%</span>
+          </div>
+          <Progress value={uploadProgress} className="h-2" />
         </div>
       )}
       
@@ -200,6 +249,11 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
                 <p className="text-sm text-gray-500">
                   {uploadedImages.length} of {maxImages} images uploaded
                 </p>
+                {uploadedImages.length > 0 && (
+                  <p className="text-xs text-amber-600 font-medium">
+                    The first uploaded image will be used as the main vehicle image
+                  </p>
+                )}
               </>
             )}
           </div>

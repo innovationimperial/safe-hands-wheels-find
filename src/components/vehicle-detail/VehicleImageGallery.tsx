@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/carousel";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { cn } from "@/lib/utils";
+import { Image } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 interface VehicleImageGalleryProps {
@@ -18,6 +19,7 @@ interface VehicleImageGalleryProps {
 
 const VehicleImageGallery = ({ images, title }: VehicleImageGalleryProps) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [imageErrors, setImageErrors] = useState<Record<number, boolean>>({});
   
   // Filter out any empty or invalid image URLs
   const validImages = images.filter(img => img && img.trim() !== "");
@@ -30,25 +32,31 @@ const VehicleImageGallery = ({ images, title }: VehicleImageGalleryProps) => {
     }
   }, [images, validImages.length]);
   
+  const handleImageError = (image: string, index: number) => {
+    console.error(`Failed to load image at index ${index}: ${image}`);
+    setImageErrors(prev => ({ ...prev, [index]: true }));
+    
+    // Only show toast for the first error to avoid spamming
+    if (Object.keys(imageErrors).length === 0) {
+      toast({
+        title: "Image Error",
+        description: "Failed to load one or more vehicle images",
+        variant: "destructive"
+      });
+    }
+  };
+  
   // If no valid images are available, display a placeholder
   if (validImages.length === 0) {
     return (
       <div className="mb-6">
-        <div className="bg-gray-100 h-[400px] rounded-lg overflow-hidden flex items-center justify-center">
+        <div className="bg-gray-100 h-[400px] rounded-lg overflow-hidden flex flex-col items-center justify-center">
+          <Image className="h-20 w-20 text-gray-300 mb-4" />
           <p className="text-gray-500">No images available for this vehicle</p>
         </div>
       </div>
     );
   }
-
-  const handleImageError = (image: string) => {
-    console.error(`Failed to load image: ${image}`);
-    toast({
-      title: "Image Error",
-      description: "Failed to load one or more vehicle images",
-      variant: "destructive"
-    });
-  };
 
   return (
     <div className="mb-6 space-y-4">
@@ -69,15 +77,21 @@ const VehicleImageGallery = ({ images, title }: VehicleImageGalleryProps) => {
           {validImages.map((image, index) => (
             <CarouselItem key={`main-${index}-${image}`}>
               <AspectRatio ratio={16 / 9} className="bg-gray-100 rounded-lg overflow-hidden">
-                <img 
-                  src={image} 
-                  alt={`${title} - Image ${index + 1}`}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    handleImageError(image);
-                    (e.target as HTMLImageElement).src = '/placeholder.svg';
-                  }}
-                />
+                {imageErrors[index] ? (
+                  <div className="w-full h-full flex flex-col items-center justify-center bg-gray-100">
+                    <Image className="h-16 w-16 text-gray-300 mb-2" />
+                    <p className="text-sm text-gray-400">Image failed to load</p>
+                  </div>
+                ) : (
+                  <img 
+                    src={image} 
+                    alt={`${title} - Image ${index + 1}`}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      handleImageError(image, index);
+                    }}
+                  />
+                )}
               </AspectRatio>
             </CarouselItem>
           ))}
@@ -101,15 +115,18 @@ const VehicleImageGallery = ({ images, title }: VehicleImageGalleryProps) => {
               )}
               style={{ width: '80px', height: '60px' }}
             >
-              <img 
-                src={image} 
-                alt={`${title} thumbnail ${index + 1}`}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  console.error(`Failed to load thumbnail: ${image}`);
-                  (e.target as HTMLImageElement).src = '/placeholder.svg';
-                }}
-              />
+              {imageErrors[index] ? (
+                <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                  <Image className="h-4 w-4 text-gray-300" />
+                </div>
+              ) : (
+                <img 
+                  src={image} 
+                  alt={`${title} thumbnail ${index + 1}`}
+                  className="w-full h-full object-cover"
+                  onError={(e) => handleImageError(image, index)}
+                />
+              )}
             </div>
           ))}
         </div>

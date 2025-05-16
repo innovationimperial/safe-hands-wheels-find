@@ -36,6 +36,11 @@ const VehicleImageSection: React.FC<VehicleImageSectionProps> = ({
         description: "Please upload at least one image for the vehicle",
         variant: "destructive"
       });
+    } else {
+      toast({
+        title: "Images Updated",
+        description: `${validImages.length} image(s) added to the vehicle`
+      });
     }
   };
 
@@ -50,6 +55,9 @@ const VehicleImageSection: React.FC<VehicleImageSectionProps> = ({
         existingImages={images}
         maxImages={5}
       />
+      <p className="text-sm text-muted-foreground">
+        Upload up to 5 images of the vehicle. The first image will be used as the main image.
+      </p>
       {images.length === 0 && (
         <p className="text-sm text-red-500">
           At least one image is required

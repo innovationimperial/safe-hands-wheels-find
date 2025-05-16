@@ -12,16 +12,18 @@ interface VehicleCardProps {
 }
 
 const VehicleCard: React.FC<VehicleCardProps> = ({ vehicle }) => {
+  const [imageError, setImageError] = React.useState(false);
+
   return (
     <Card className="overflow-hidden border-gray-100 hover:shadow-lg transition-shadow duration-300">
-      <div className="relative h-52 overflow-hidden">
+      <div className="relative h-52 overflow-hidden bg-gray-100">
         <img 
-          src={vehicle.image || '/placeholder.svg'} 
+          src={!imageError ? vehicle.image : '/placeholder.svg'} 
           alt={vehicle.title} 
           className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
           onError={(e) => {
             console.error(`Failed to load vehicle image: ${vehicle.image}`);
-            (e.target as HTMLImageElement).src = '/placeholder.svg';
+            setImageError(true);
           }}
         />
         {vehicle.featured && (

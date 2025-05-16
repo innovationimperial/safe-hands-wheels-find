@@ -28,6 +28,7 @@ export function useVehicleForm(vehicleId?: string) {
       }
       
       console.log("Current authenticated user:", user.id);
+      console.log("Current images:", images);
       
       // Map form values to database values
       const mappedFuelType = mapFuelTypeToDatabase(values.fuel_type);
@@ -37,6 +38,20 @@ export function useVehicleForm(vehicleId?: string) {
       if (values.status === "Pending") {
         dbStatus = "Reserved";
       }
+
+      // Make sure we have at least one image before proceeding
+      if (images.length === 0) {
+        toast({
+          title: "Image Required",
+          description: "Please upload at least one image for the vehicle",
+          variant: "destructive"
+        });
+        return null;
+      }
+      
+      // Use the first image as the main vehicle image
+      const mainImage = images[0];
+      console.log("Setting main vehicle image:", mainImage);
 
       const vehicleData = {
         title: values.title,
@@ -52,7 +67,7 @@ export function useVehicleForm(vehicleId?: string) {
         fuel_type: mappedFuelType,
         status: dbStatus,
         user_id: user.id, // Always use the current user's ID
-        image: images.length > 0 ? images[0] : "", // Set first image as the main image
+        image: mainImage, // Set first image as the main image
         featured: values.featured
       };
 
@@ -89,7 +104,17 @@ export function useVehicleForm(vehicleId?: string) {
           console.error("Error updating vehicle:", error);
           throw error;
         }
-        await saveImages(vehicleId);
+        
+        console.log("Vehicle updated successfully:", data);
+        
+        // Save all images
+        const imagesSaved = await saveImages(vehicleId);
+        if (!imagesSaved) {
+          console.error("Failed to save some vehicle images");
+        } else {
+          console.log("All vehicle images saved successfully");
+        }
+        
         return data;
       } else {
         // Create new vehicle
@@ -105,12 +130,23 @@ export function useVehicleForm(vehicleId?: string) {
         }
         
         if (data) {
-          await saveImages(data.id);
+          console.log("Vehicle created successfully:", data);
+          
+          // Save all images
+          const imagesSaved = await saveImages(data.id);
+          if (!imagesSaved) {
+            console.error("Failed to save some vehicle images");
+          } else {
+            console.log("All vehicle images saved successfully");
+          }
         }
+        
         return data;
       }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      if (!data) return; // Handle case where we returned null due to validation
+      
       queryClient.invalidateQueries({ queryKey: ["vehicles"] });
       toast({
         title: `Vehicle ${vehicleId ? "updated" : "created"} successfully`,
