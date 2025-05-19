@@ -38,7 +38,13 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
       // Also notify parent immediately to ensure state is synchronized
       onImagesUploaded(validImages);
     }
-  }, [existingImages, onImagesUploaded]);
+  }, [existingImages]);
+  
+  // Add this effect to notify parent whenever our local state changes
+  useEffect(() => {
+    console.log("MultipleImageUploader: Local state changed, notifying parent:", uploadedImages);
+    onImagesUploaded(uploadedImages);
+  }, [uploadedImages, onImagesUploaded]);
   
   const handleImageError = (index: number) => {
     setImagePreviewErrors(prev => ({ ...prev, [index]: true }));
@@ -112,7 +118,7 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
         // Update local state
         setUploadedImages(newImages);
         
-        // IMPORTANT: Always notify parent component about image updates
+        // Notify parent component about image updates
         onImagesUploaded(newImages);
         
         toast({
@@ -153,7 +159,7 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
     // Update local state
     setUploadedImages(newImages);
     
-    // IMPORTANT: Always notify parent component when images are removed
+    // Also notify parent component when images are removed
     onImagesUploaded(newImages);
     
     // Also remove from error tracking if exists

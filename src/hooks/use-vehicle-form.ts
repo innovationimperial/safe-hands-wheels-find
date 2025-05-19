@@ -6,14 +6,13 @@ import { toast } from '@/hooks/use-toast';
 import { VehicleFormValues } from '@/schemas/vehicleSchema';
 import { useVehicleSubmission } from '@/hooks/use-vehicle-submission';
 import { useImageValidation } from '@/hooks/use-image-validation';
-import { useVehicleImages } from '@/hooks/use-vehicle-images';
 
 export function useVehicleForm(vehicleId?: string) {
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
-  const { images, updateImages } = useVehicleImages(vehicleId);
-  const { hasValidImages } = useImageValidation();
+  const [images, setImages] = useState<string[]>([]);
+  const { hasValidImages, validateImages } = useImageValidation();
   const { prepareVehicleData } = useVehicleSubmission();
   
   // Determine if we're in dealer mode vs admin mode
@@ -63,6 +62,13 @@ export function useVehicleForm(vehicleId?: string) {
       });
     },
   });
+
+  // Function to update images from child components
+  const updateImages = (newImages: string[]) => {
+    const validImages = validateImages(newImages);
+    console.log("use-vehicle-form: Updating images:", validImages);
+    setImages(validImages);
+  };
 
   return {
     images,

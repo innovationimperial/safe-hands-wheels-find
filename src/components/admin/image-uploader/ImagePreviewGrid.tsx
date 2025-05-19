@@ -16,7 +16,7 @@ const ImagePreviewGrid: React.FC<ImagePreviewGridProps> = ({
   imagePreviewErrors,
   onImageError = () => {} 
 }) => {
-  if (images.length === 0) return null;
+  if (!images || images.length === 0) return null;
   
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">

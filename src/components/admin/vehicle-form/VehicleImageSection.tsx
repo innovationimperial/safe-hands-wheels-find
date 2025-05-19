@@ -4,6 +4,7 @@ import MultipleImageUploader from '@/components/admin/MultipleImageUploader';
 import { toast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from 'lucide-react';
+import { useImageValidation } from '@/hooks/use-image-validation';
 
 interface VehicleImageSectionProps {
   userId: string;
@@ -16,6 +17,8 @@ const VehicleImageSection: React.FC<VehicleImageSectionProps> = ({
   images, 
   updateImages 
 }) => {
+  const { validateImages } = useImageValidation();
+  
   // Log received images for debugging
   useEffect(() => {
     console.log("VehicleImageSection: Received images:", images);
@@ -24,11 +27,7 @@ const VehicleImageSection: React.FC<VehicleImageSectionProps> = ({
   const handleImageUpdate = (newImages: string[]) => {
     console.log("VehicleImageSection: Updating images:", newImages);
     // Validate images before updating
-    const validImages = newImages.filter(url => url && url.trim() !== "");
-    
-    if (validImages.length !== newImages.length) {
-      console.warn("Some invalid image URLs were filtered out");
-    }
+    const validImages = validateImages(newImages);
     
     // Always update the parent component with valid images
     updateImages(validImages);
@@ -37,7 +36,7 @@ const VehicleImageSection: React.FC<VehicleImageSectionProps> = ({
   const hasImages = images && images.length > 0;
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-4">
       <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
         Vehicle Images <span className="text-red-500">*</span>
       </label>

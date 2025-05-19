@@ -10,7 +10,7 @@ export function useImageValidation() {
     }
     
     // Filter out any empty or invalid image URLs
-    const validImages = images.filter(url => url && url.trim() !== "");
+    const validImages = images.filter(url => url && typeof url === 'string' && url.trim() !== "");
     
     if (validImages.length !== images.length) {
       console.warn(`Filtered out ${images.length - validImages.length} invalid images`);

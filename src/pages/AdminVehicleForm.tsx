@@ -10,7 +10,6 @@ import { Form } from '@/components/ui/form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { vehicleFormSchema, VehicleFormValues } from '@/schemas/vehicleSchema';
 import { mapFuelTypeFromDatabase } from '@/types/vehicle';
-import { useVehicleImages } from '@/hooks/use-vehicle-images';
 import { useVehicleForm } from '@/hooks/use-vehicle-form';
 import VehicleImageSection from '@/components/admin/vehicle-form/VehicleImageSection';
 import VehicleBasicInfoFields from '@/components/admin/vehicle-form/VehicleBasicInfoFields';
@@ -18,12 +17,12 @@ import VehicleDropdownFields from '@/components/admin/vehicle-form/VehicleDropdo
 import VehicleFeaturedToggle from '@/components/admin/vehicle-form/VehicleFeaturedToggle';
 import FormActions from '@/components/admin/vehicle-form/FormActions';
 import { toast } from '@/hooks/use-toast';
+import { getVehicleImages } from '@/integrations/supabase/client';
 
 const AdminVehicleForm = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
-  const { images, updateImages } = useVehicleForm(id);
-  const { isSubmitting, submitForm } = useVehicleForm(id);
+  const { images, updateImages, isSubmitting, submitForm } = useVehicleForm(id);
 
   // Define the form with validation schema
   const form = useForm<VehicleFormValues>({
@@ -50,6 +49,26 @@ const AdminVehicleForm = () => {
     console.log("Current images in AdminVehicleForm:", images);
     console.log("Has images:", images && images.length > 0);
   }, [images]);
+  
+  // Load images for the vehicle if editing
+  useEffect(() => {
+    if (id) {
+      const loadImages = async () => {
+        try {
+          console.log(`Fetching images for vehicle ${id}`);
+          const vehicleImages = await getVehicleImages(id);
+          if (vehicleImages && vehicleImages.length > 0) {
+            console.log(`Found ${vehicleImages.length} images for vehicle:`, vehicleImages);
+            updateImages(vehicleImages);
+          }
+        } catch (error) {
+          console.error("Error loading images:", error);
+        }
+      };
+      
+      loadImages();
+    }
+  }, [id]);
 
   // Fetch vehicle data if editing an existing vehicle
   const { isLoading } = useQuery({
