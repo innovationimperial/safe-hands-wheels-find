@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { getVehicleImages } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useImageValidation } from '@/hooks/use-image-validation';
@@ -51,12 +51,12 @@ export function useVehicleImages(vehicleId?: string) {
   }, [vehicleId, validateImages]);
   
   // Update the images list
-  const updateImages = (newImages: string[]) => {
+  const updateImages = useCallback((newImages: string[]) => {
     // Filter out any empty strings or undefined values
     const validImages = validateImages(newImages);
     console.log('Updating images array:', validImages);
     setImages(validImages);
-  };
+  }, [validateImages]);
   
   return {
     images,

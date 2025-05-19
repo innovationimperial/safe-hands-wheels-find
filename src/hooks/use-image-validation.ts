@@ -16,12 +16,16 @@ export function useImageValidation() {
       console.warn(`Filtered out ${images.length - validImages.length} invalid images`);
     }
     
+    console.log("Validated images:", validImages);
     return validImages;
   }, []);
   
   // Check if at least one valid image is available
   const hasValidImages = useCallback((images: string[]): boolean => {
-    return validateImages(images).length > 0;
+    const validImages = validateImages(images);
+    const hasImages = validImages.length > 0;
+    console.log(`Has valid images: ${hasImages} (${validImages.length} valid images)`);
+    return hasImages;
   }, [validateImages]);
   
   return {

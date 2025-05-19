@@ -30,16 +30,8 @@ const VehicleImageSection: React.FC<VehicleImageSectionProps> = ({
       console.warn("Some invalid image URLs were filtered out");
     }
     
+    // Always update the parent component with valid images
     updateImages(validImages);
-    
-    // Only show toast notifications when appropriate
-    if (validImages.length === 0 && newImages.length > 0) {
-      toast({
-        title: "Image Required",
-        description: "Please upload at least one image for the vehicle",
-        variant: "destructive"
-      });
-    }
   };
 
   const hasImages = images && images.length > 0;

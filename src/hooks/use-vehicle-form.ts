@@ -12,7 +12,7 @@ export function useVehicleForm(vehicleId?: string) {
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
-  const { images } = useVehicleImages(vehicleId);
+  const { images, updateImages } = useVehicleImages(vehicleId);
   const { hasValidImages } = useImageValidation();
   const { prepareVehicleData } = useVehicleSubmission();
   
@@ -66,6 +66,7 @@ export function useVehicleForm(vehicleId?: string) {
 
   return {
     images,
+    updateImages,
     isSubmitting: mutation.isPending,
     submitForm: mutation.mutate,
   };

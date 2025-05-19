@@ -22,7 +22,7 @@ import { toast } from '@/hooks/use-toast';
 const AdminVehicleForm = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
-  const { images, updateImages, isLoading: imagesLoading } = useVehicleImages(id);
+  const { images, updateImages } = useVehicleForm(id);
   const { isSubmitting, submitForm } = useVehicleForm(id);
 
   // Define the form with validation schema
@@ -48,9 +48,8 @@ const AdminVehicleForm = () => {
   // Enhanced debug logs
   useEffect(() => {
     console.log("Current images in AdminVehicleForm:", images);
-    console.log("Images loading state:", imagesLoading);
     console.log("Has images:", images && images.length > 0);
-  }, [images, imagesLoading]);
+  }, [images]);
 
   // Fetch vehicle data if editing an existing vehicle
   const { isLoading } = useQuery({
@@ -147,7 +146,7 @@ const AdminVehicleForm = () => {
               <FormActions
                 isSubmitting={isSubmitting}
                 isLoading={isLoading}
-                isValid={true} // We handle image validation separately
+                isValid={images && images.length > 0}
                 isEdit={!!id}
               />
             </form>

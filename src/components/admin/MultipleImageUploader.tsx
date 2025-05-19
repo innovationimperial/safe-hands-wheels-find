@@ -34,8 +34,11 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
       const validImages = existingImages.filter(url => url && url.trim() !== "");
       console.log("MultipleImageUploader: Setting valid existing images:", validImages);
       setUploadedImages(validImages);
+      
+      // Also notify parent immediately to ensure state is synchronized
+      onImagesUploaded(validImages);
     }
-  }, [existingImages]);
+  }, [existingImages, onImagesUploaded]);
   
   const handleImageError = (index: number) => {
     setImagePreviewErrors(prev => ({ ...prev, [index]: true }));
@@ -103,7 +106,10 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
       setUploadProgress(100);
       
       if (successfulUploads.length > 0) {
+        // Create a new array with all images
         const newImages = [...uploadedImages, ...successfulUploads];
+        
+        // Update local state
         setUploadedImages(newImages);
         
         // IMPORTANT: Always notify parent component about image updates
@@ -141,7 +147,10 @@ const MultipleImageUploader: React.FC<MultipleImageUploaderProps> = ({
   }, [userId, onImagesUploaded, uploadedImages, maxImages]);
   
   const removeImage = (indexToRemove: number) => {
+    // Create a new array without the removed image
     const newImages = uploadedImages.filter((_, index) => index !== indexToRemove);
+    
+    // Update local state
     setUploadedImages(newImages);
     
     // IMPORTANT: Always notify parent component when images are removed
