@@ -2,7 +2,6 @@
 import React, { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import VehicleFilters from "@/components/vehicle-listings/VehicleFilters";
-import VehicleList from "@/components/vehicle-listings/VehicleList";
 import { LoadingState, ErrorState } from "@/components/vehicle-listings/VehicleListingStates";
 import { useVehicleListings } from "@/hooks/use-vehicle-listings";
 import { toast } from "@/hooks/use-toast";

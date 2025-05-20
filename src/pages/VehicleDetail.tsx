@@ -9,6 +9,7 @@ import VehicleDetailTabs from "@/components/vehicle-detail/VehicleDetailTabs";
 import VehicleSidebar from "@/components/vehicle-detail/VehicleSidebar";
 import VehicleDetailLoading from "@/components/vehicle-detail/VehicleDetailLoading";
 import VehicleDetailError from "@/components/vehicle-detail/VehicleDetailError";
+import { toast } from "@/hooks/use-toast";
 
 const VehicleDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -24,6 +25,14 @@ const VehicleDetail = () => {
         additionalImages: allImages,
         totalImages: allImages.length
       });
+      
+      if (allImages.length === 0) {
+        toast({
+          title: "Warning",
+          description: "No images are available for this vehicle",
+          variant: "destructive"
+        });
+      }
     }
   }, [vehicle, allImages]);
   

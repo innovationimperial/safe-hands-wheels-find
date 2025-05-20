@@ -87,7 +87,7 @@ const VehicleImageGallery = ({ images, title }: VehicleImageGalleryProps) => {
                     src={image} 
                     alt={`${title} - Image ${index + 1}`}
                     className="w-full h-full object-cover"
-                    onError={(e) => {
+                    onError={() => {
                       handleImageError(image, index);
                     }}
                   />
@@ -124,7 +124,7 @@ const VehicleImageGallery = ({ images, title }: VehicleImageGalleryProps) => {
                   src={image} 
                   alt={`${title} thumbnail ${index + 1}`}
                   className="w-full h-full object-cover"
-                  onError={(e) => handleImageError(image, index)}
+                  onError={() => handleImageError(image, index)}
                 />
               )}
             </div>

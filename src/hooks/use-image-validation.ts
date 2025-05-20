@@ -1,35 +1,39 @@
 
-import { useCallback } from 'react';
+import { useState, useCallback } from 'react';
 
 export function useImageValidation() {
-  // Validate and filter images to ensure they are valid URLs
-  const validateImages = useCallback((images: string[]): string[] => {
-    if (!images || !Array.isArray(images)) {
-      console.warn("Invalid images array provided to validator");
-      return [];
-    }
-    
-    // Filter out any empty or invalid image URLs
-    const validImages = images.filter(url => url && typeof url === 'string' && url.trim() !== "");
-    
-    if (validImages.length !== images.length) {
-      console.warn(`Filtered out ${images.length - validImages.length} invalid images`);
-    }
-    
-    console.log("Validated images:", validImages);
-    return validImages;
+  const [validationError, setValidationError] = useState<string | null>(null);
+  
+  // Validate a single image URL 
+  const isValidImageUrl = useCallback((url: string): boolean => {
+    return !!url && url.trim() !== "";
   }, []);
   
-  // Check if at least one valid image is available
+  // Filter and validate image URLs
+  const validateImages = useCallback((images: string[]): string[] => {
+    if (!images) return [];
+    
+    const validImages = images.filter(isValidImageUrl);
+    
+    if (validImages.length === 0) {
+      setValidationError("No valid images found");
+    } else {
+      setValidationError(null);
+    }
+    
+    return validImages;
+  }, [isValidImageUrl]);
+  
+  // Check if there are any valid images
   const hasValidImages = useCallback((images: string[]): boolean => {
-    const validImages = validateImages(images);
-    const hasImages = validImages.length > 0;
-    console.log(`Has valid images: ${hasImages} (${validImages.length} valid images)`);
-    return hasImages;
-  }, [validateImages]);
+    if (!images) return false;
+    return images.filter(isValidImageUrl).length > 0;
+  }, [isValidImageUrl]);
   
   return {
+    validationError,
     validateImages,
+    isValidImageUrl,
     hasValidImages
   };
 }
