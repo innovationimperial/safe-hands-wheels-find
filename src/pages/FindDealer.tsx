@@ -1,6 +1,4 @@
-
 import { useState } from "react";
-import Layout from "@/components/layout/Layout";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -137,157 +135,155 @@ const FindDealer = () => {
   ));
 
   return (
-    <Layout>
-      <div className="container-custom py-16">
-        <h1 className="text-4xl font-bold mb-2">Find a Dealer</h1>
-        <p className="text-lg text-gray-600 mb-8">
-          Locate trusted car dealers in your area.
-        </p>
-        
-        {/* Search and filter section */}
-        <div className="bg-white p-6 rounded-lg shadow-sm border mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search dealers..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            
-            <Select value={selectedState} onValueChange={setSelectedState}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select State" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All States</SelectItem>
-                {states.map((state) => (
-                  <SelectItem key={state} value={state}>
-                    {state}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            
-            <Select value={selectedCity} onValueChange={setSelectedCity}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select City" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Cities</SelectItem>
-                {cities.map((city) => (
-                  <SelectItem key={city} value={city}>
-                    {city}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        
-        {/* Dealer map section - placeholder */}
-        <div className="relative bg-accent h-[300px] md:h-[400px] rounded-lg mb-8 flex items-center justify-center overflow-hidden">
-          <div className="absolute inset-0 bg-gray-200">
-            <img 
-              src="https://images.unsplash.com/photo-1488972685288-c3fd157d7c7a?auto=format&fit=crop&q=80&ixlib=rb-4.0.3" 
-              alt="Map background"
-              className="w-full h-full object-cover opacity-50"
+    <div className="container-custom py-16">
+      <h1 className="text-4xl font-bold mb-2">Find a Dealer</h1>
+      <p className="text-lg text-gray-600 mb-8">
+        Locate trusted car dealers in your area.
+      </p>
+      
+      {/* Search and filter section */}
+      <div className="bg-white p-6 rounded-lg shadow-sm border mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Search dealers..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
             />
           </div>
-          <div className="relative z-10 text-center p-8">
-            <h3 className="text-2xl font-bold mb-4">Interactive Map Coming Soon</h3>
-            <p className="max-w-md text-gray-700 mx-auto">
-              We're working on an interactive map to make finding dealers even easier.
-              For now, you can browse our list of dealers below.
-            </p>
-          </div>
-        </div>
-        
-        {/* Dealers list */}
-        <div className="space-y-6">
-          <h2 className="text-2xl font-bold">
-            {filteredDealers.length} Dealers Found
-          </h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {filteredDealers.length > 0 ? (
-              filteredDealers.map((dealer) => (
-                <Card key={dealer.id} className="overflow-hidden border-gray-100 hover:shadow-md transition-all">
-                  <CardContent className="p-6">
-                    <div className="flex mb-4">
-                      <div className="w-24 h-16 mr-4 flex-shrink-0 flex items-center justify-center bg-gray-50 border rounded">
-                        <img 
-                          src={dealer.logo} 
-                          alt={`${dealer.name} logo`} 
-                          className="max-h-full max-w-full p-1"
-                        />
-                      </div>
-                      <div>
-                        <div className="flex items-center">
-                          <h3 className="font-bold text-lg">{dealer.name}</h3>
-                          {dealer.status === "Verified" && (
-                            <Badge className="ml-2 bg-green-100 text-green-800 hover:bg-green-200">
-                              <CheckCircle className="h-3 w-3 mr-1" /> Verified
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="text-sm text-gray-500 flex items-center">
-                          <MapPin className="h-3 w-3 mr-1" />
-                          {dealer.city}, {dealer.state}
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <p className="text-sm text-gray-600 mb-4">
-                      {dealer.description}
-                    </p>
-                    
-                    <div className="grid grid-cols-1 gap-2 text-sm mb-4">
-                      <p className="flex items-center text-gray-700">
-                        <MapPin className="h-4 w-4 mr-2 text-gray-500" />
-                        {dealer.address}, {dealer.city}, {dealer.state} {dealer.zip}
-                      </p>
-                      <p className="flex items-center text-gray-700">
-                        <Phone className="h-4 w-4 mr-2 text-gray-500" />
-                        {dealer.phone}
-                      </p>
-                      <p className="flex items-center text-gray-700">
-                        <Mail className="h-4 w-4 mr-2 text-gray-500" />
-                        {dealer.email}
-                      </p>
-                    </div>
-                    
-                    <div className="flex justify-between">
-                      <Button variant="outline" className="flex-1 mr-2">
-                        View Inventory
-                      </Button>
-                      <Button className="flex-1 bg-primary hover:bg-primary/90" asChild>
-                        <a href={dealer.website} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center">
-                          Website <ExternalLink className="ml-1 h-4 w-4" />
-                        </a>
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            ) : (
-              <div className="col-span-2 text-center py-12 bg-gray-50 rounded-lg">
-                <p className="text-gray-500">No dealers found matching your criteria.</p>
-                <Button variant="outline" className="mt-4" onClick={() => {
-                  setSearchTerm("");
-                  setSelectedState("all");
-                  setSelectedCity("all");
-                }}>
-                  Reset Filters
-                </Button>
-              </div>
-            )}
-          </div>
+          <Select value={selectedState} onValueChange={setSelectedState}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select State" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All States</SelectItem>
+              {states.map((state) => (
+                <SelectItem key={state} value={state}>
+                  {state}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          <Select value={selectedCity} onValueChange={setSelectedCity}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select City" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Cities</SelectItem>
+              {cities.map((city) => (
+                <SelectItem key={city} value={city}>
+                  {city}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
-    </Layout>
+      
+      {/* Dealer map section - placeholder */}
+      <div className="relative bg-accent h-[300px] md:h-[400px] rounded-lg mb-8 flex items-center justify-center overflow-hidden">
+        <div className="absolute inset-0 bg-gray-200">
+          <img 
+            src="https://images.unsplash.com/photo-1488972685288-c3fd157d7c7a?auto=format&fit=crop&q=80&ixlib=rb-4.0.3" 
+            alt="Map background"
+            className="w-full h-full object-cover opacity-50"
+          />
+        </div>
+        <div className="relative z-10 text-center p-8">
+          <h3 className="text-2xl font-bold mb-4">Interactive Map Coming Soon</h3>
+          <p className="max-w-md text-gray-700 mx-auto">
+            We're working on an interactive map to make finding dealers even easier.
+            For now, you can browse our list of dealers below.
+          </p>
+        </div>
+      </div>
+      
+      {/* Dealers list */}
+      <div className="space-y-6">
+        <h2 className="text-2xl font-bold">
+          {filteredDealers.length} Dealers Found
+        </h2>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {filteredDealers.length > 0 ? (
+            filteredDealers.map((dealer) => (
+              <Card key={dealer.id} className="overflow-hidden border-gray-100 hover:shadow-md transition-all">
+                <CardContent className="p-6">
+                  <div className="flex mb-4">
+                    <div className="w-24 h-16 mr-4 flex-shrink-0 flex items-center justify-center bg-gray-50 border rounded">
+                      <img 
+                        src={dealer.logo} 
+                        alt={`${dealer.name} logo`} 
+                        className="max-h-full max-w-full p-1"
+                      />
+                    </div>
+                    <div>
+                      <div className="flex items-center">
+                        <h3 className="font-bold text-lg">{dealer.name}</h3>
+                        {dealer.status === "Verified" && (
+                          <Badge className="ml-2 bg-green-100 text-green-800 hover:bg-green-200">
+                            <CheckCircle className="h-3 w-3 mr-1" /> Verified
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-500 flex items-center">
+                        <MapPin className="h-3 w-3 mr-1" />
+                        {dealer.city}, {dealer.state}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <p className="text-sm text-gray-600 mb-4">
+                    {dealer.description}
+                  </p>
+                  
+                  <div className="grid grid-cols-1 gap-2 text-sm mb-4">
+                    <p className="flex items-center text-gray-700">
+                      <MapPin className="h-4 w-4 mr-2 text-gray-500" />
+                      {dealer.address}, {dealer.city}, {dealer.state} {dealer.zip}
+                    </p>
+                    <p className="flex items-center text-gray-700">
+                      <Phone className="h-4 w-4 mr-2 text-gray-500" />
+                      {dealer.phone}
+                    </p>
+                    <p className="flex items-center text-gray-700">
+                      <Mail className="h-4 w-4 mr-2 text-gray-500" />
+                      {dealer.email}
+                    </p>
+                  </div>
+                  
+                  <div className="flex justify-between">
+                    <Button variant="outline" className="flex-1 mr-2">
+                      View Inventory
+                    </Button>
+                    <Button className="flex-1 bg-primary hover:bg-primary/90" asChild>
+                      <a href={dealer.website} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center">
+                        Website <ExternalLink className="ml-1 h-4 w-4" />
+                      </a>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          ) : (
+            <div className="col-span-2 text-center py-12 bg-gray-50 rounded-lg">
+              <p className="text-gray-500">No dealers found matching your criteria.</p>
+              <Button variant="outline" className="mt-4" onClick={() => {
+                setSearchTerm("");
+                setSelectedState("all");
+                setSelectedCity("all");
+              }}>
+                Reset Filters
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 };
 
