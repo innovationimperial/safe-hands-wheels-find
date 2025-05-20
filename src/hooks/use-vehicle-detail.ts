@@ -20,9 +20,10 @@ export const useVehicleDetail = (id: string | undefined) => {
       
       if (vehicleError) throw vehicleError;
       
-      // Get vehicle images
+      // Get vehicle images - retry with better error handling
       let images = [];
       try {
+        console.log(`Fetching images for vehicle ${id} from vehicle_images table`);
         const { data: imageData, error: imagesError } = await supabase
           .from('vehicle_images')
           .select('image_url')
@@ -30,13 +31,12 @@ export const useVehicleDetail = (id: string | undefined) => {
         
         if (imagesError) {
           console.error("Error fetching vehicle images:", imagesError);
-          toast({
-            title: "Notice",
-            description: "Using primary image only due to permission restrictions",
-          });
+          // Do not show toast here as we'll still try to use the main image
+        } else if (imageData && imageData.length > 0) {
+          images = imageData;
+          console.log(`Successfully retrieved ${imageData.length} images for vehicle ${id}:`, imageData);
         } else {
-          images = imageData || [];
-          console.log(`Retrieved ${images.length || 0} additional images from vehicle_images table for vehicle ${id}`);
+          console.log(`No additional images found in vehicle_images table for vehicle ${id}`);
         }
       } catch (imageError) {
         console.error("Exception fetching vehicle images:", imageError);
@@ -85,13 +85,6 @@ export const useVehicleDetail = (id: string | undefined) => {
       additionalImagesCount: additionalImages.length,
       additionalImages
     });
-    
-    // If no additional images are available due to RLS policy,
-    // ensure we at least have the main image for display
-    if (additionalImages.length === 0 && mainImage) {
-      console.log("No additional images found, using main image only");
-      return [mainImage];
-    }
     
     // Create a combined array of images, ensuring no duplicates and no empty strings
     const uniqueImages = new Set<string>();
