@@ -26,12 +26,17 @@ const VehicleDetail = () => {
         totalImages: allImages.length
       });
       
+      // Only show warning if there are truly no images
       if (allImages.length === 0) {
         toast({
           title: "Warning",
           description: "No images are available for this vehicle",
           variant: "destructive"
         });
+      } else if (allImages.length === 1) {
+        console.log("Only one image is available for this vehicle");
+      } else {
+        console.log(`${allImages.length} images available for carousel`);
       }
     }
   }, [vehicle, allImages]);

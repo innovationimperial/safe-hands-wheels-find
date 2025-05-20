@@ -20,6 +20,7 @@ interface VehicleImageGalleryProps {
 const VehicleImageGallery = ({ images, title }: VehicleImageGalleryProps) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [imageErrors, setImageErrors] = useState<Record<number, boolean>>({});
+  const [initialized, setInitialized] = useState(false);
   
   // Filter out any empty or invalid image URLs
   const validImages = images.filter(img => img && img.trim() !== "");
@@ -29,6 +30,9 @@ const VehicleImageGallery = ({ images, title }: VehicleImageGalleryProps) => {
     console.log(`VehicleImageGallery: Received ${images.length} images, ${validImages.length} are valid:`, validImages);
     if (validImages.length === 0) {
       console.warn('No valid images found for vehicle');
+    } else {
+      // Initialize carousel when images are available
+      setInitialized(true);
     }
   }, [images, validImages.length]);
   
@@ -65,11 +69,14 @@ const VehicleImageGallery = ({ images, title }: VehicleImageGalleryProps) => {
         className="w-full" 
         opts={{
           startIndex: currentImageIndex,
-          loop: validImages.length > 1
+          loop: validImages.length > 1,
+          draggable: validImages.length > 1,
+          watchDrag: true,
         }}
         onSelect={(index) => {
           if (typeof index === 'number') {
             setCurrentImageIndex(index);
+            console.log(`Selected image index: ${index}`);
           }
         }}
       >
@@ -96,8 +103,12 @@ const VehicleImageGallery = ({ images, title }: VehicleImageGalleryProps) => {
             </CarouselItem>
           ))}
         </CarouselContent>
-        <CarouselPrevious className="left-2" />
-        <CarouselNext className="right-2" />
+        {validImages.length > 1 && (
+          <>
+            <CarouselPrevious className="left-2" />
+            <CarouselNext className="right-2" />
+          </>
+        )}
       </Carousel>
 
       {/* Thumbnail navigation (only show if more than one image) */}

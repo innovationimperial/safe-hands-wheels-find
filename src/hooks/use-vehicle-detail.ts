@@ -21,21 +21,26 @@ export const useVehicleDetail = (id: string | undefined) => {
       if (vehicleError) throw vehicleError;
       
       // Get vehicle images
-      const { data: images, error: imagesError } = await supabase
-        .from('vehicle_images')
-        .select('image_url')
-        .eq('vehicle_id', id);
-      
-      if (imagesError) {
-        console.error("Error fetching vehicle images:", imagesError);
-        toast({
-          title: "Error",
-          description: "Failed to load vehicle images",
-          variant: "destructive"
-        });
+      let images = [];
+      try {
+        const { data: imageData, error: imagesError } = await supabase
+          .from('vehicle_images')
+          .select('image_url')
+          .eq('vehicle_id', id);
+        
+        if (imagesError) {
+          console.error("Error fetching vehicle images:", imagesError);
+          toast({
+            title: "Notice",
+            description: "Using primary image only due to permission restrictions",
+          });
+        } else {
+          images = imageData || [];
+          console.log(`Retrieved ${images.length || 0} additional images from vehicle_images table for vehicle ${id}`);
+        }
+      } catch (imageError) {
+        console.error("Exception fetching vehicle images:", imageError);
       }
-      
-      console.log(`Retrieved ${images?.length || 0} additional images from vehicle_images table for vehicle ${id}`);
       
       // Get vehicle features
       const { data: features, error: featuresError } = await supabase
@@ -71,7 +76,7 @@ export const useVehicleDetail = (id: string | undefined) => {
   const allImages = useMemo(() => {
     if (!vehicleData?.vehicle) return [];
     
-    // Make a complete array of all images, starting with the main image if it exists
+    // Always start with the main image if it exists
     const mainImage = vehicleData.vehicle.image;
     const additionalImages = vehicleData.images.map(img => img.image_url).filter(Boolean);
     
@@ -80,6 +85,13 @@ export const useVehicleDetail = (id: string | undefined) => {
       additionalImagesCount: additionalImages.length,
       additionalImages
     });
+    
+    // If no additional images are available due to RLS policy,
+    // ensure we at least have the main image for display
+    if (additionalImages.length === 0 && mainImage) {
+      console.log("No additional images found, using main image only");
+      return [mainImage];
+    }
     
     // Create a combined array of images, ensuring no duplicates and no empty strings
     const uniqueImages = new Set<string>();
