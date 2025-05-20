@@ -37,9 +37,12 @@ const HeroSearch = () => {
       
       {/* Content */}
       <div className="container-custom relative h-full flex flex-col justify-center items-start">
-        <h1 className="text-white text-4xl md:text-5xl lg:text-6xl font-bold mb-8 max-w-xl animate-fade-in">
-          Search For New & Used Cars
+        <h1 className="text-white text-3xl md:text-4xl lg:text-5xl font-bold mb-4 max-w-xl animate-fade-in">
+          We are specialists in car sales and vehicle importation
         </h1>
+        <p className="text-white text-lg md:text-xl mb-8 max-w-xl opacity-90 animate-fade-in">
+          Providing clients with seamless access to high-quality vehicles from around the world
+        </p>
         
         {/* Search Container */}
         <div className="w-full max-w-2xl bg-primary bg-opacity-95 rounded-lg shadow-xl animate-scale-in">
