@@ -7,6 +7,7 @@ import VehicleList from "@/components/vehicle-listings/VehicleList";
 import { LoadingState, ErrorState } from "@/components/vehicle-listings/VehicleListingStates";
 import { useVehicleListings } from "@/hooks/use-vehicle-listings";
 import { toast } from "@/hooks/use-toast";
+import VehicleCard from "@/components/vehicle-listings/VehicleCard";
 
 const BuyCar = () => {
   const location = useLocation();
@@ -87,10 +88,34 @@ const BuyCar = () => {
           />
           
           {/* Vehicle Listings */}
-          <VehicleList
-            vehicles={filteredVehicles}
-            isLoading={isLoading}
-          />
+          <div className="flex-1 w-full">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold">
+                {filteredVehicles.length} Vehicles Found
+              </h2>
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-gray-500">Viewing 1-{filteredVehicles.length} of {filteredVehicles.length}</span>
+              </div>
+            </div>
+            
+            {filteredVehicles.length === 0 ? (
+              <div className="bg-gray-50 p-8 rounded-lg text-center">
+                <p className="text-gray-600 mb-4">No vehicles match your search criteria.</p>
+                <button 
+                  onClick={clearFilters}
+                  className="text-primary hover:underline"
+                >
+                  Clear all filters
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-6">
+                {filteredVehicles.map((vehicle) => (
+                  <VehicleCard key={vehicle.id} vehicle={vehicle} />
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </Layout>

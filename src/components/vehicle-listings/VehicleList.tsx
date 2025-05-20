@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Edit, Eye, Trash2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,6 +24,9 @@ export interface VehicleListProps {
 }
 
 const VehicleList: React.FC<VehicleListProps> = ({ vehicles, isLoading }) => {
+  const location = useLocation();
+  const isAdminRoute = location.pathname.includes('/admin') || location.pathname.includes('/dealer');
+  
   const handleDelete = async (id: string) => {
     const confirmDelete = window.confirm("Are you sure you want to delete this vehicle?");
     if (!confirmDelete) return;
@@ -71,17 +74,17 @@ const VehicleList: React.FC<VehicleListProps> = ({ vehicles, isLoading }) => {
             <TableHead>Year</TableHead>
             <TableHead>Price</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
+            {isAdminRoute && <TableHead className="text-right">Actions</TableHead>}
           </TableRow>
         </TableHeader>
         <TableBody>
           {isLoading ? (
             <TableRow>
-              <TableCell colSpan={6} className="text-center">Loading...</TableCell>
+              <TableCell colSpan={isAdminRoute ? 6 : 5} className="text-center">Loading...</TableCell>
             </TableRow>
           ) : vehicles.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={6} className="text-center">No vehicles found.</TableCell>
+              <TableCell colSpan={isAdminRoute ? 6 : 5} className="text-center">No vehicles found.</TableCell>
             </TableRow>
           ) : (
             vehicles.map((vehicle) => (
@@ -99,30 +102,32 @@ const VehicleList: React.FC<VehicleListProps> = ({ vehicles, isLoading }) => {
                 <TableCell>
                   <Badge variant="secondary">{vehicle.status || "Available"}</Badge>
                 </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <Button variant="outline" size="icon" asChild>
-                      <Link to={`/vehicle/${vehicle.id}`}>
-                        <Eye className="h-4 w-4" />
-                      </Link>
-                    </Button>
-                    <Button variant="outline" size="icon" asChild>
-                      <Link to={`/dealer/edit-vehicle/${vehicle.id}`}>
-                        <Edit className="h-4 w-4" />
-                      </Link>
-                    </Button>
-                    <Button variant="destructive" size="icon" onClick={() => handleDelete(vehicle.id)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </TableCell>
+                {isAdminRoute && (
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button variant="outline" size="icon" asChild>
+                        <Link to={`/vehicle/${vehicle.id}`}>
+                          <Eye className="h-4 w-4" />
+                        </Link>
+                      </Button>
+                      <Button variant="outline" size="icon" asChild>
+                        <Link to={`/dealer/edit-vehicle/${vehicle.id}`}>
+                          <Edit className="h-4 w-4" />
+                        </Link>
+                      </Button>
+                      <Button variant="destructive" size="icon" onClick={() => handleDelete(vehicle.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                )}
               </TableRow>
             ))
           )}
         </TableBody>
         <TableFooter>
           <TableRow>
-            <TableCell colSpan={6}>
+            <TableCell colSpan={isAdminRoute ? 6 : 5}>
               {vehicles.length} Vehicles
             </TableCell>
           </TableRow>
