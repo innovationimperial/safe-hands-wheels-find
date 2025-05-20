@@ -70,7 +70,8 @@ const VehicleImageGallery = ({ images, title }: VehicleImageGalleryProps) => {
         opts={{
           startIndex: currentImageIndex,
           loop: validImages.length > 1,
-          draggable: validImages.length > 1,
+          // Remove the draggable property as it's not in the OptionsType
+          // and the carousel is draggable by default
           watchDrag: true,
         }}
         onSelect={(index) => {
