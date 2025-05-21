@@ -2,10 +2,12 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { 
+  ArrowLeft,
   Car, 
   LayoutDashboard, 
   Users, 
-  LogOut
+  LogOut,
+  PanelLeft
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -19,7 +21,8 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarProvider,
-  SidebarTrigger
+  SidebarTrigger,
+  useSidebar
 } from "@/components/ui/sidebar";
 
 const AdminLayout = ({ children }: { children: React.ReactNode }) => {
@@ -96,8 +99,19 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
         {/* Main content */}
         <div className="flex-1 overflow-auto">
           <header className="bg-white border-b border-gray-200 flex items-center justify-between p-4">
+            {/* Add sidebar toggle button that's visible when sidebar is collapsed */}
+            <ToggleSidebarButton />
+            
             <h1 className="text-xl font-semibold">Admin Dashboard</h1>
+            
             <div className="flex items-center space-x-4">
+              <Link 
+                to="/"
+                className="flex items-center text-sm text-primary hover:text-primary/80 transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4 mr-1" />
+                Back to Website
+              </Link>
               <span className="text-sm text-gray-600">Admin User</span>
             </div>
           </header>
@@ -107,6 +121,28 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
         </div>
       </div>
     </SidebarProvider>
+  );
+};
+
+// Add a new component for the toggle button that only appears when sidebar is collapsed
+const ToggleSidebarButton = () => {
+  const { state, toggleSidebar } = useSidebar();
+  
+  if (state === "expanded") {
+    // Don't show button when sidebar is already expanded
+    return null;
+  }
+  
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={toggleSidebar}
+      className="flex items-center mr-2"
+    >
+      <PanelLeft className="h-4 w-4" />
+      <span className="ml-2">Show Sidebar</span>
+    </Button>
   );
 };
 
