@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -40,9 +39,6 @@ const Navbar = () => {
         <div className="hidden md:flex items-center space-x-8">
           <Link to="/buy-car" className="font-medium hover:text-primary transition-colors">
             Buy A Car
-          </Link>
-          <Link to="/find-dealer" className="font-medium hover:text-primary transition-colors">
-            Find a Dealer
           </Link>
           <Link to="/sell-car" className="font-medium hover:text-primary transition-colors">
             Sell Your Car
@@ -159,13 +155,6 @@ const Navbar = () => {
               Buy A Car
             </Link>
             <Link 
-              to="/find-dealer" 
-              className="font-medium p-2 hover:bg-accent rounded-md transition-colors"
-              onClick={() => setIsOpen(false)}
-            >
-              Find a Dealer
-            </Link>
-            <Link 
               to="/sell-car" 
               className="font-medium p-2 hover:bg-accent rounded-md transition-colors"
               onClick={() => setIsOpen(false)}
@@ -174,89 +163,87 @@ const Navbar = () => {
             </Link>
             
             {!isLoading && (user ? (
-              <>
-                <div className="p-2 border-t pt-4">
-                  <div className="flex items-center gap-3 mb-3">
-                    <Avatar>
-                      <AvatarImage src={profile?.avatar_url || ''} />
-                      <AvatarFallback>
-                        {profile?.full_name 
-                          ? getInitials(profile.full_name) 
-                          : user.email ? user.email[0].toUpperCase() : 'U'
-                        }
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <div className="font-medium">
-                        {profile?.full_name || user.email?.split('@')[0]}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {user.email}
-                      </div>
+              <div className="p-2 border-t pt-4">
+                <div className="flex items-center gap-3 mb-3">
+                  <Avatar>
+                    <AvatarImage src={profile?.avatar_url || ''} />
+                    <AvatarFallback>
+                      {profile?.full_name 
+                        ? getInitials(profile.full_name) 
+                        : user.email ? user.email[0].toUpperCase() : 'U'
+                      }
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <div className="font-medium">
+                      {profile?.full_name || user.email?.split('@')[0]}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {user.email}
                     </div>
                   </div>
-                  
-                  {isAdmin && (
-                    <Link 
-                      to="/admin" 
-                      className="block font-medium p-2 mb-2 hover:bg-accent rounded-md transition-colors"
-                      onClick={() => setIsOpen(false)}
-                    >
-                      Admin Dashboard
-                    </Link>
-                  )}
+                </div>
+                
+                {isAdmin && (
+                  <Link 
+                    to="/admin" 
+                    className="block font-medium p-2 mb-2 hover:bg-accent rounded-md transition-colors"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Admin Dashboard
+                  </Link>
+                )}
 
-                  {isDealer && isDealerApproved && (
-                    <>
-                      <Link 
-                        to="/dealer/dashboard" 
-                        className="block font-medium p-2 mb-2 hover:bg-accent rounded-md transition-colors"
-                        onClick={() => setIsOpen(false)}
-                      >
-                        <div className="flex items-center">
-                          <CarFront className="mr-2 h-4 w-4" />
-                          <span>Dealer Dashboard</span>
-                        </div>
-                      </Link>
-                      <Link 
-                        to="/dealer/add-vehicle" 
-                        className="block font-medium p-2 mb-2 hover:bg-accent rounded-md transition-colors"
-                        onClick={() => setIsOpen(false)}
-                      >
-                        <div className="flex items-center">
-                          <CarFront className="mr-2 h-4 w-4" />
-                          <span>Add Vehicle</span>
-                        </div>
-                      </Link>
-                    </>
-                  )}
-
-                  {!isDealer && !isAdmin && (
+                {isDealer && isDealerApproved && (
+                  <>
                     <Link 
-                      to="/become-dealer" 
+                      to="/dealer/dashboard" 
                       className="block font-medium p-2 mb-2 hover:bg-accent rounded-md transition-colors"
                       onClick={() => setIsOpen(false)}
                     >
                       <div className="flex items-center">
-                        <Store className="mr-2 h-4 w-4" />
-                        <span>Become a Dealer</span>
+                        <CarFront className="mr-2 h-4 w-4" />
+                        <span>Dealer Dashboard</span>
                       </div>
                     </Link>
-                  )}
+                    <Link 
+                      to="/dealer/add-vehicle" 
+                      className="block font-medium p-2 mb-2 hover:bg-accent rounded-md transition-colors"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      <div className="flex items-center">
+                        <CarFront className="mr-2 h-4 w-4" />
+                        <span>Add Vehicle</span>
+                      </div>
+                    </Link>
+                  </>
+                )}
 
-                  <Button 
-                    variant="outline" 
-                    onClick={() => {
-                      logout();
-                      setIsOpen(false);
-                    }}
-                    className="w-full flex items-center justify-center gap-2"
+                {!isDealer && !isAdmin && (
+                  <Link 
+                    to="/become-dealer" 
+                    className="block font-medium p-2 mb-2 hover:bg-accent rounded-md transition-colors"
+                    onClick={() => setIsOpen(false)}
                   >
-                    <LogOut size={16} />
-                    <span>Logout</span>
-                  </Button>
-                </div>
-              </>
+                    <div className="flex items-center">
+                      <Store className="mr-2 h-4 w-4" />
+                      <span>Become a Dealer</span>
+                    </div>
+                  </Link>
+                )}
+
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    logout();
+                    setIsOpen(false);
+                  }}
+                  className="w-full flex items-center justify-center gap-2"
+                >
+                  <LogOut size={16} />
+                  <span>Logout</span>
+                </Button>
+              </div>
             ) : (
               <div className="flex flex-col gap-2 pt-2">
                 <Button 

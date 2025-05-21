@@ -6,7 +6,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import BuyCar from "./pages/BuyCar";
-import FindDealer from "./pages/FindDealer";
 import SellCar from "./pages/SellCar";
 import VehicleDetail from "./pages/VehicleDetail";
 import NotFound from "./pages/NotFound";
@@ -37,7 +36,6 @@ function App() {
               {/* Main website routes with Layout */}
               <Route path="/" element={<Layout><Index /></Layout>} />
               <Route path="/buy-car" element={<Layout><BuyCar /></Layout>} />
-              <Route path="/find-dealer" element={<Layout><FindDealer /></Layout>} />
               <Route path="/sell-car" element={<Layout><SellCar /></Layout>} />
               <Route path="/vehicle/:id" element={<Layout><VehicleDetail /></Layout>} />
               <Route path="/auth" element={<Layout><Auth /></Layout>} />
