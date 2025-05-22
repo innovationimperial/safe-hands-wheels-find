@@ -63,14 +63,16 @@ export const useVehicleDetail = (id: string | undefined) => {
     },
     enabled: !!id,
     retry: 1,
-    onSettled: (data, error) => {
-      if (error) {
-        console.error("Vehicle detail query error:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load vehicle details",
-          variant: "destructive"
-        });
+    meta: {
+      onSettled: (data: any, error: Error | null) => {
+        if (error) {
+          console.error("Vehicle detail query error:", error);
+          toast({
+            title: "Error",
+            description: "Failed to load vehicle details",
+            variant: "destructive"
+          });
+        }
       }
     }
   });
