@@ -20,7 +20,6 @@ interface VehicleImageGalleryProps {
 const VehicleImageGallery = ({ images, title }: VehicleImageGalleryProps) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [imageErrors, setImageErrors] = useState<Record<number, boolean>>({});
-  const [initialized, setInitialized] = useState(false);
   
   // Filter out any empty or invalid image URLs
   const validImages = images.filter(img => img && img.trim() !== "");
@@ -30,9 +29,6 @@ const VehicleImageGallery = ({ images, title }: VehicleImageGalleryProps) => {
     console.log(`VehicleImageGallery: Received ${images.length} images, ${validImages.length} are valid:`, validImages);
     if (validImages.length === 0) {
       console.warn('No valid images found for vehicle');
-    } else {
-      // Initialize carousel when images are available
-      setInitialized(true);
     }
   }, [images, validImages.length]);
   
@@ -70,8 +66,6 @@ const VehicleImageGallery = ({ images, title }: VehicleImageGalleryProps) => {
         opts={{
           startIndex: currentImageIndex,
           loop: validImages.length > 1,
-          // Remove the draggable property as it's not in the OptionsType
-          // and the carousel is draggable by default
           watchDrag: true,
         }}
         onSelect={(index) => {
