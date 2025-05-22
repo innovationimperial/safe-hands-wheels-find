@@ -100,18 +100,6 @@ const Auth = () => {
                   </Button>
                 </CardFooter>
               </form>
-              
-              <CardFooter className="flex-col pt-0">
-                <div className="mt-4 text-center text-sm">
-                  <p className="text-muted-foreground">
-                    For demo access, use:
-                  </p>
-                  <p className="text-xs font-mono mt-1">
-                    Email: admin@example.com<br />
-                    Password: admin123
-                  </p>
-                </div>
-              </CardFooter>
             </Card>
           </TabsContent>
           

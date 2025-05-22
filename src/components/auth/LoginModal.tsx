@@ -78,13 +78,6 @@ const LoginModal = ({ open, onOpenChange }: LoginModalProps) => {
           </DialogFooter>
         </form>
         <div className="mt-4 text-center text-sm">
-          <p className="text-muted-foreground">
-            For demo access, use:
-          </p>
-          <p className="text-xs font-mono mt-1">
-            Email: admin@example.com<br />
-            Password: admin123
-          </p>
           <div className="mt-3">
             <p className="text-muted-foreground">
               Don't have an account?

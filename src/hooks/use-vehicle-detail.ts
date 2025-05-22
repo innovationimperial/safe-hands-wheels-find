@@ -41,7 +41,7 @@ export const useVehicleDetail = (id: string | undefined) => {
         });
       } else {
         images = vehicleImages || [];
-        console.log(`Retrieved ${images.length} images for vehicle ${id}`);
+        console.log(`Retrieved ${images.length} images for vehicle ${id}:`, images);
       }
       
       // Get vehicle features
@@ -113,7 +113,7 @@ export const useVehicleDetail = (id: string | undefined) => {
     }
     
     const imageArray = Array.from(uniqueImages);
-    console.log(`Final image list contains ${imageArray.length} unique images`);
+    console.log(`Final image list contains ${imageArray.length} unique images:`, imageArray);
     
     if (imageArray.length === 0) {
       console.warn("No images found for this vehicle");
