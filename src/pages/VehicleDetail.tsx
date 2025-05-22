@@ -26,7 +26,7 @@ const VehicleDetail = () => {
         totalImages: allImages.length
       });
       
-      // Only show warning if there are truly no images
+      // Show appropriate messages based on image count
       if (allImages.length === 0) {
         toast({
           title: "Warning",
@@ -52,17 +52,19 @@ const VehicleDetail = () => {
   }
 
   return (
-    <div className="container mx-auto py-8">
+    <div className="container mx-auto py-8 px-4 sm:px-6 lg:px-8">
       <div className="mb-6">
-        <Link to="/buy-car" className="flex items-center text-sm text-gray-500 hover:text-gray-700">
-          <ChevronLeft className="h-4 w-4 mr-1" />
-          Back to listings
+        <Link to="/buy-car" className="flex items-center text-sm text-gray-500 hover:text-gray-700 group">
+          <ChevronLeft className="h-4 w-4 mr-1 transition-transform group-hover:-translate-x-1" />
+          <span>Back to listings</span>
         </Link>
       </div>
       
+      <h1 className="text-2xl md:text-3xl font-bold mb-6">{vehicle.title}</h1>
+      
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Vehicle Images and Details */}
-        <div className="col-span-2">
+        <div className="col-span-1 lg:col-span-2">
           <VehicleImageGallery images={allImages} title={vehicle.title} />
           <VehicleDetailTabs vehicle={vehicle} featuresByCategory={featuresByCategory} />
         </div>
