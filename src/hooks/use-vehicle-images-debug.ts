@@ -40,19 +40,27 @@ export const checkVehicleImages = async (vehicleId: string) => {
     console.log("Additional images count:", vehicleImages?.length || 0);
     console.log("Additional images:", vehicleImages);
     
-    // 4. Explicitly try to fetch without RLS for debugging
-    const { data: directDbResult } = await supabase.rpc('debug_get_vehicle_images', { 
-      v_id: vehicleId 
-    });
+    // 4. Check RLS policies by attempting different queries
+    console.log("Testing RLS policies...");
     
-    console.log("Direct DB check (bypassing RLS):", directDbResult);
+    // Try to get count of all vehicle images (should work if RLS allows)
+    const { count, error: countError } = await supabase
+      .from('vehicle_images')
+      .select('*', { count: 'exact', head: true })
+      .eq('vehicle_id', vehicleId);
+    
+    if (countError) {
+      console.error("Count query failed:", countError);
+    } else {
+      console.log("RLS count result:", count);
+    }
     
     return {
       success: true,
       vehicle,
       mainImage: vehicle.image,
       additionalImages: vehicleImages || [],
-      directDbResult
+      totalCount: count
     };
   } catch (error) {
     console.error("Debug function error:", error);
@@ -69,7 +77,14 @@ export const forceSaveVehicleImages = async (vehicleId: string, imageUrls: strin
   console.group(`Force saving vehicle images for vehicle ID: ${vehicleId}`);
   
   try {
+    // Validate inputs
+    if (!vehicleId || !imageUrls || imageUrls.length === 0) {
+      console.error("Invalid inputs provided");
+      return { success: false, error: "Invalid vehicle ID or image URLs" };
+    }
+    
     // First delete existing
+    console.log("Deleting existing images...");
     const { error: deleteError } = await supabase
       .from('vehicle_images')
       .delete()
@@ -86,6 +101,7 @@ export const forceSaveVehicleImages = async (vehicleId: string, imageUrls: strin
       image_url: url
     }));
     
+    console.log("Inserting new images:", imagesToInsert);
     const { data, error } = await supabase
       .from('vehicle_images')
       .insert(imagesToInsert)
@@ -105,3 +121,9 @@ export const forceSaveVehicleImages = async (vehicleId: string, imageUrls: strin
     console.groupEnd();
   }
 };
+
+// Make functions available globally for console debugging
+if (typeof window !== 'undefined') {
+  (window as any).checkVehicleImages = checkVehicleImages;
+  (window as any).forceSaveVehicleImages = forceSaveVehicleImages;
+}
