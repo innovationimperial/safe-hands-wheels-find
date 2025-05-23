@@ -42,6 +42,14 @@ export const useVehicleDetail = (id: string | undefined) => {
       } else {
         images = vehicleImages || [];
         console.log(`Retrieved ${images.length} images for vehicle ${id}:`, images);
+        
+        // If no images returned, log more details for debugging
+        if (!images.length) {
+          console.warn("No vehicle images found in vehicle_images table. This could be due to:");
+          console.warn("- No images have been uploaded for this vehicle");
+          console.warn("- The images exist but RLS policies are preventing access");
+          console.warn("- There's an issue with the vehicle_id foreign key");
+        }
       }
       
       // Get vehicle features
